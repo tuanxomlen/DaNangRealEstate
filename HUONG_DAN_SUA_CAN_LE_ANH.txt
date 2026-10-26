@@ -1,0 +1,16 @@
+HƯỚNG DẪN CẬP NHẬT CĂN LỀ VÀ ẢNH
+
+Bản này điều chỉnh giao diện theo hướng rộng nhưng vẫn căn giữa:
+- Nội dung chính rộng tối đa 1440px trên màn hình lớn, có lề cân đối hai bên.
+- Các thẻ bất động sản giữ cùng chiều cao và bố cục thẳng hàng.
+- Ảnh trong thẻ và trang chi tiết dùng object-fit: contain để không cắt mất phần ảnh; có thể xuất hiện khoảng trống nền nhẹ nếu ảnh có tỷ lệ khác nhau.
+- Bố cục vẫn co lại trên màn hình nhỏ.
+
+Cập nhật an toàn:
+1. Giải nén ZIP vào thư mục riêng.
+2. Sao lưu dự án hiện tại.
+3. Chép mã nguồn mới vào dự án cũ, ghi đè file tương ứng.
+4. Giữ nguyên backend/.env.
+5. Tại frontend chạy: npm install, sau đó npm run dev.
+
+Không chạy db:init nếu database hiện tại đã có dữ liệu.

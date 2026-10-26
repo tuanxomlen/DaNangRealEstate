@@ -1,0 +1,54 @@
+HUONG DAN BAT XAC THUC EMAIL GMAIL - DaNangRealEstate
+=====================================================
+
+1) Cai thu vien backend
+-----------------------
+Mo PowerShell tai thu muc backend:
+  cd D:\Downloads\1\DaNangRealEstate\backend
+  npm install
+
+2) Tao Gmail App Password
+-------------------------
+- Dang nhap vao tai khoan Google dung de gui email.
+- Bat Xac minh 2 buoc (2-Step Verification) trong Google Account > Security.
+- Mo Google Account > Security > 2-Step Verification > App passwords.
+- Tao app password moi, dat ten vi du: DaNangRealEstate.
+- Sao chep ma 16 ky tu. Dung ma nay, KHONG dung mat khau Gmail thong thuong.
+- Neu tai khoan truong hoc/cong ty khong co muc App passwords, can dung SMTP provider khac hoac hoi quan tri vien.
+
+3) Them vao backend/.env
+------------------------
+Them cac dong sau vao CUOI file backend/.env, thay bang thong tin that:
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=diachi@gmail.com
+SMTP_PASS=mat_khau_ung_dung_16_ky_tu
+SMTP_FROM=DaNangRealEstate <diachi@gmail.com>
+
+Khong chia se file .env, khong commit len GitHub va khong gui SMTP_PASS cho nguoi khac.
+Giu nguyen cac dong SQL Server, JWT va Cloudinary dang co trong .env.
+
+4) Chay lai backend va frontend
+-------------------------------
+Backend:
+  npm run dev
+Frontend (terminal thu hai):
+  cd ..\frontend
+  npm install
+  npm run dev
+
+5) Cach hoat dong
+-----------------
+- Nguoi dung nhap ho ten, email, so dien thoai (tuy chon), mat khau.
+- Website gui ma 6 chu so vao email; ma het han sau 10 phut.
+- Nguoi dung nhap ma de hoan tat dang ky. Tai khoan chi duoc tao sau khi ma dung.
+- Gioi han 5 lan nhap sai; co gioi han gui lai ma de tranh spam.
+- Bang dbo.EmailVerificationCodes duoc tao tu dong trong SQL Server khi API duoc goi; khong can chay db:init va khong xoa du lieu cu.
+
+Neu khong gui duoc email:
+- Kiem tra SMTP_USER va SMTP_PASS da dung chua.
+- Dam bao SMTP_PASS la App Password 16 ky tu, khong phai mat khau Gmail.
+- Kiem tra ket noi Internet va khoi dong lai backend sau khi sua .env.
+- Khong gui ma xac thuc hoac App Password cho nguoi khac.

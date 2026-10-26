@@ -1,0 +1,21 @@
+SỬA LỖI GIAO DIỆN BỊ HẸP Ở GIỮA MÀN HÌNH
+
+Nguyên nhân: CSS cũ giới hạn .container ở 1180px nên trên màn hình rộng còn khoảng trống lớn hai bên.
+
+Đã cập nhật frontend/src/styles.css:
+- Container dùng gần toàn bộ chiều rộng màn hình desktop, chừa lề 24px mỗi bên.
+- Trên điện thoại tự giảm lề còn 14px.
+- Khu vực quản trị được phép dùng toàn bộ chiều rộng.
+- Giữ nguyên các API, SQL Server, Cloudinary và chức năng hiện có.
+
+Cách cập nhật:
+1. Sao lưu thư mục dự án hiện tại.
+2. Giải nén ZIP này.
+3. Chép mã nguồn mới vào thư mục dự án, ghi đè file tương ứng.
+4. Giữ nguyên backend/.env.
+5. Khởi động lại frontend. Nếu Vite đang chạy, thường có thể chỉ cần lưu file; nếu chưa cập nhật thì Ctrl+C rồi chạy npm run dev trong frontend.
+
+Nếu chỉ muốn sửa thủ công, thay quy tắc .container trong frontend/src/styles.css bằng:
+.container{width:calc(100% - 48px);max-width:none;margin-left:auto;margin-right:auto}
+Và thêm:
+@media(max-width:760px){.container{width:calc(100% - 28px)}}

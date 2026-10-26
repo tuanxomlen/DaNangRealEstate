@@ -1,0 +1,17 @@
+HƯỚNG DẪN CẬP NHẬT VIP VÀ ẢNH ĐẠI DIỆN
+
+1. Giải nén bản cập nhật vào một thư mục mới để kiểm tra trước. Giữ nguyên backend/.env hiện có; không ghi đè file .env bằng file mẫu.
+2. Mở PowerShell tại thư mục backend, chạy: npm install
+3. Chạy migration an toàn (thêm cột còn thiếu, không xóa bảng/dữ liệu): npm run db:init
+4. Khởi động backend: npm run dev
+5. Mở PowerShell khác tại thư mục frontend, chạy: npm install rồi npm run dev
+6. Đăng nhập, mở Trang cá nhân và chọn Đổi ảnh đại diện. Ảnh JPG/PNG/WEBP tối đa 5 MB được tải lên Cloudinary; SQL Server chỉ lưu URL. Cần cấu hình Cloudinary đúng trong backend/.env.
+
+GÓI VIP
+- VIP thường: miễn phí, tin mới hiển thị thường trong 30 ngày.
+- VIP Bạc: 1.000 token, ưu tiên 3 ngày.
+- VIP Vàng: 4.000 token, ưu tiên 7 ngày.
+- VIP Kim cương: 10.000 token, ưu tiên 15 ngày.
+- Hết thời gian ưu tiên, tin trở về thứ tự thường; hết thời hạn hiển thị 30 ngày, tin mới không còn hiển thị công khai.
+
+Lưu ý: Các tin cũ có ListingUntil = NULL vẫn được giữ và không tự hết hạn cho đến khi được chỉnh lý riêng. Các cột AvatarUrl và ListingUntil được thêm bằng npm run db:init. Lệnh này không xóa dữ liệu hiện có.

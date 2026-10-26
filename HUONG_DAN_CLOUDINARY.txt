@@ -1,0 +1,43 @@
+HUONG DAN CAU HINH CLOUDINARY - DaNangRealEstate
+
+MUC TIEU
+- Anh duoc tai len Cloudinary, khong luu file anh trong backend/uploads.
+- SQL Server chi luu URL anh Cloudinary tra ve.
+- API Secret chi nam trong backend/.env, khong dua vao frontend.
+
+BUOC 1 - LAY THONG TIN CLOUDINARY
+1. Dang nhap https://cloudinary.com/ va mo Console/Dashboard.
+2. Sao chep Cloud name, API Key va API Secret.
+3. Khong gui API Secret cho nguoi khac va khong chup anh de lo secret.
+
+BUOC 2 - CAU HINH backend/.env
+1. Mo thu muc du an, sau do mo backend/.env.
+2. Them 3 dong sau vao cuoi file (giu nguyen cac cau hinh SQL Server/JWT dang co):
+   CLOUDINARY_CLOUD_NAME=gia_tri_cloud_name
+   CLOUDINARY_API_KEY=gia_tri_api_key
+   CLOUDINARY_API_SECRET=gia_tri_api_secret
+3. Thay cac gia tri vi du bang gia tri that tren Cloudinary. Khong them dau ngoac kep neu khong can.
+4. Khong tao file .env trong frontend va khong dat API Secret vao frontend.
+
+BUOC 3 - CAI DAT VA CHAY BACKEND
+1. Mo terminal VS Code tai thu muc backend.
+2. Chay: npm install
+3. Chay: npm run dev
+4. Neu backend dang chay, dung bang Ctrl+C truoc khi chay lai de nap bien moi truong.
+
+BUOC 4 - KIEM TRA
+1. Dang nhap website.
+2. Mo Dang tin bat dong san, chon mot anh JPG/PNG/WEBP nho hon hoac bang 5 MB.
+3. Hoan tat dang tin va kiem tra anh hien thi.
+4. Vao Cloudinary Console > Media Library > folder danang-real-estate/properties de xem anh.
+5. URL anh duoc luu trong du lieu tin dang se co dang https://res.cloudinary.com/...
+
+NEU GAP LOI
+- Loi "Chua cau hinh Cloudinary": kiem tra 3 bien trong backend/.env va khoi dong lai backend.
+- Loi tai anh: kiem tra Cloud name, API Key, API Secret va ket noi Internet.
+- Khong can chay lai npm run db:init chi de them Cloudinary.
+- Khong can cai thu vien moi; backend su dung fetch/FormData co san trong Node.js 18+.
+
+LUU Y
+- Backend khong ghi anh vao backend/uploads nua. Anh cu da luu o backend/uploads (neu co) khong tu dong duoc chuyen len Cloudinary; chi cac anh upload moi se dung Cloudinary.
+- Neu da tung commit API Secret len GitHub, hay rotate/regenerate secret trong Cloudinary Console.

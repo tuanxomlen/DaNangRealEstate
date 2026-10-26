@@ -1,0 +1,19 @@
+CẬP NHẬT: ẢNH ĐẠI DIỆN TIN NHẮN VÀ VỊ TRÍ HIỂN THỊ GIỚI THIỆU
+
+1. Tin nhắn
+- Danh sách hội thoại và phần đầu khung chat dùng AvatarUrl của người còn lại.
+- Nếu người dùng chưa tải ảnh đại diện, hệ thống vẫn hiển thị biểu tượng mặc định.
+- Backend trả về otherUserAvatarUrl từ bảng Users.
+
+2. Giới thiệu bản thân
+- Đã bỏ phần giới thiệu khỏi thẻ tin bất động sản dùng chung, nên không hiển thị trên trang chủ, mua bán và cho thuê.
+- Giới thiệu vẫn hiển thị tại trang Nhà môi giới /agents/:id.
+- Giới thiệu của tài khoản hiện tại hiển thị trong phần hồ sơ cá nhân.
+
+3. Cập nhật/chạy
+- Giải nén ZIP và thay thư mục dự án hiện tại bằng bản cập nhật sau khi sao lưu bản cũ.
+- Backend: vào thư mục backend, chạy npm install nếu cần, sau đó npm run dev (hoặc lệnh start ghi trong package.json).
+- Frontend: vào thư mục frontend, chạy npm install nếu cần, sau đó npm run dev.
+- Nếu backend đang chạy, khởi động lại backend để nhận trường avatar mới trong API tin nhắn.
+
+Lưu ý: Cú pháp backend đã được kiểm tra bằng node --check. Chưa xác nhận được frontend build trong môi trường đóng gói vì Vite chưa được cài đặt (node_modules chưa có); chạy npm install tại máy của bạn trước khi kiểm tra.

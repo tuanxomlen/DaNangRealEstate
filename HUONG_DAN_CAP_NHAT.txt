@@ -1,0 +1,29 @@
+HUONG DAN CAP NHAT - DaNangRealEstate
+
+Cac thay doi trong ban nay:
+1. Co the tai anh truc tiep tu may tinh khi dang tin. Ho tro JPG, PNG, WEBP; toi da 10 anh/tin, 5 MB/anh.
+2. Nhom dieu huong Mua ban / Cho thue / Tat ca bat dong san duoc danh dau nhu mot nhom chung khi dang o trang danh sach bat dong san.
+3. Quan tri > Quan ly tin dang duoc tach thanh 2 tab: Tin cho duyet va Tin da duyet.
+4. Khi Admin tu choi tin, he thong xoa vinh vien tin va cac du lieu phu thuoc (yeu thich, bao cao, hoi thoai lien quan) de tranh loi khoa ngoai.
+
+Cach chay:
+- Giai nen va sao luu du an cu truoc khi ghi de.
+- Giu nguyen backend/.env dang dung de bao toan cau hinh SQL Server.
+- Backend: mo terminal tai thu muc backend, chay npm install (neu can), sau do npm run dev.
+- Frontend: mo terminal tai thu muc frontend, chay npm install (neu can), sau do npm run dev.
+- Khong can chay lai db:init chi de dung cac thay doi nay. Anh moi duoc upload len Cloudinary; SQL Server chi luu URL anh.
+
+
+
+CAP NHAT GIAO DIEN VA NHAN TIN REAL-TIME
+- Giao dien tin nhan da co tim kiem hoi thoai, so tin chua doc, trang thai ket noi, xem da doc, boi canh tin dang va giao dien responsive.
+- Backend tao WebSocket tai ws://localhost:4000/ws va xac thuc bang JWT dang dang nhap.
+- Tin nhan van duoc luu trong SQL Server. Backend tu them cot Messages.ReadAt neu database cu chua co; khong xoa du lieu cu.
+- Neu WebSocket bi chan boi mang/proxy, giao dien tu dung polling du phong moi 15 giay.
+- Anh moi tiep tuc duoc upload len Cloudinary; SQL Server chi luu URL anh.
+
+CHAY DU AN
+1. Backend: cd backend; npm install; npm run dev
+2. Frontend: mo terminal khac, cd frontend; npm install; npm run dev
+3. Kiem tra backend/.env co USE_SQL_SERVER=true, JWT_SECRET, cau hinh SQL Server va ba bien CLOUDINARY_...
+4. Mo http://localhost:5173. Khong can chay db:init chi de them cot ReadAt, vi backend tu kiem tra va them cot nay khi khoi dong.

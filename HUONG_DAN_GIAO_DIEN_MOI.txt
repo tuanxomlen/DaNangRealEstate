@@ -1,0 +1,23 @@
+DA NANG REAL ESTATE - HUONG DAN CAP NHAT GIAO DIEN
+
+Mau da ap dung:
+- Tong the: Mau 1, hien dai toi gian, nen trang va xanh duong.
+- Danh sach bat dong san: the anh lon, khoang cach thoang, bo cuc 2 cot trong khu vuc ket qua de anh va thong tin de doc.
+- Tin nhan: danh sach hoi thoai + khung chat + cot thong tin bat dong san/goi y an toan tren man hinh rong.
+- Che do sang/toi: nut Sang/Toi tren thanh dau trang; lua chon duoc luu tren trinh duyet.
+
+CAP NHAT AN TOAN
+1. Dung backend va frontend neu dang chay (Ctrl+C).
+2. Sao luu thu muc du an cu. Khong xoa database SQL Server.
+3. Giai nen ZIP nay vao thu muc tam.
+4. Copy ma nguon moi vao thu muc du an, ghi de cac file tuong ung.
+5. GIU file backend/.env hien tai cua ban (SQL Server, JWT, Cloudinary). ZIP khong chua .env that.
+6. Trong backend: npm install ; npm run dev
+7. Trong frontend: npm install ; npm run build ; npm run dev
+8. Mo dia chi Vite hien thi tren Terminal (thuong la http://localhost:5173).
+
+LUU Y KIEM THU
+- Khong chay npm run db:init neu ban da co du lieu that; lenh nay chi dung khi khoi tao database moi.
+- Che do toi duoc luu theo trinh duyet, khong thay doi database.
+- Cot thong tin ben canh chat chi hien tren man hinh rong; tren man hinh nho giao dien tu an de uu tien noi dung chat.
+- Can kiem tra lai cac luong dang nhap, dang tin, upload Cloudinary, quan tri va chat tren may cua ban sau khi cai dependencies.

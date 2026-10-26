@@ -1,0 +1,27 @@
+HUONG DAN - TU DONG DUYET TIN VA THONG BAO
+
+Tinh nang moi:
+1. Tin co trang thai Pending se tu dong chuyen sang Approved sau khi cho du 12 gio. Backend kiem tra khi khoi dong va moi 60 giay. Tin chi duoc duyet mot lan.
+2. Khi tin duoc tu dong duyet, chu tin nhan thong bao trong website.
+3. Ngay dang hien thi tren the tin, trang chi tiet va trang Tin cua toi.
+4. Nguoi dung bam bieu tuong chuong tren thanh dau trang de xem thong bao, danh dau da doc hoac danh dau tat ca da doc.
+5. Admin vao Quan tri vien > Thong bao nguoi dung, nhap tieu de/noi dung va gui cho tat ca tai khoan dang hoat dong hoac chon mot nguoi dung.
+6. SQL Server tu tao bang dbo.Notifications khi backend khoi dong; init-db.js cung da duoc bo sung bang tuong ung. Du lieu tin dang/tai khoan cu khong bi xoa.
+
+CAP NHAT AN TOAN:
+- Sao luu thu muc du an truoc khi thay the.
+- Giu lai backend/.env cua ban; khong ghi de bang file .env.example.
+- Mo PowerShell trong backend: npm install; npm run dev.
+- Mo PowerShell khac trong frontend: npm install; npm run dev.
+- Neu dang dung SQL Server, giu USE_SQL_SERVER=true va kiem tra backend ket noi SQL Server thanh cong.
+
+Luu y: backend phai dang chay thi tien trinh kiem tra tu dong moi phut moi hoat dong. Tin Pending du 12 gio se duoc duyet o lan kiem tra tiep theo (toi da tre them khoang 1 phut, khong tinh thoi gian backend tat).
+
+
+CAP NHAT THEM - TOKEN THUONG VA XAC THUC TIN
+1. Sau khi nguoi dung xac thuc email va tai khoan duoc tao thanh cong, backend cap 5.000 token trong cot dbo.Users.Tokens.
+2. Tai khoan moi nhan thong bao "Tặng 5000 Token cho tài khoản mới" va thong bao huong dan lien he email lenhotuan14092005@gmail.com de xac thuc tin.
+3. Tai khoan dang hoat dong da ton tai cung duoc them thong bao huong dan xac thuc khi backend khoi dong (khong tao trung).
+4. Khi admin chuyen tin tu chua xac thuc sang da xac thuc, chu tin nhan thong bao "Tin đăng BĐS đã được xác thực thành công".
+5. Font website duoc doi sang Arial/Helvetica thong thuong, khong con tai font DM Sans/Manrope tu Google Fonts.
+6. Cap nhat backend va frontend tu goi ZIP; giu nguyen backend/.env va thong tin ket noi SQL Server hien co.
