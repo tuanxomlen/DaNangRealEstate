@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 import { getPool } from './db.js';
+import sql from 'mssql';
 
 const pool = await getPool();
 if (!pool) {
@@ -156,7 +157,57 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_Appointments_Buyer_Creat
 CREATE INDEX IX_Appointments_Buyer_CreatedAt ON dbo.Appointments(BuyerId, CreatedAt DESC);
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_Appointments_Owner_Status')
 CREATE INDEX IX_Appointments_Owner_Status ON dbo.Appointments(OwnerId, Status, VisitAt);
+
+IF OBJECT_ID('dbo.ForumPosts','U') IS NULL
+CREATE TABLE dbo.ForumPosts (
+  Id UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+  UserId UNIQUEIDENTIFIER NOT NULL,
+  Content NVARCHAR(MAX) NOT NULL,
+  ImagesJson NVARCHAR(MAX) NULL,
+  PropertyId UNIQUEIDENTIFIER NULL,
+  CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+  UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT FK_ForumPosts_User FOREIGN KEY(UserId) REFERENCES dbo.Users(Id),
+  CONSTRAINT FK_ForumPosts_Property FOREIGN KEY(PropertyId) REFERENCES dbo.Properties(Id)
+);
+IF OBJECT_ID('dbo.ForumComments','U') IS NULL
+CREATE TABLE dbo.ForumComments (
+  Id UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+  PostId UNIQUEIDENTIFIER NOT NULL,
+  UserId UNIQUEIDENTIFIER NOT NULL,
+  ParentId UNIQUEIDENTIFIER NULL,
+  Content NVARCHAR(2000) NOT NULL,
+  CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT FK_ForumComments_Post FOREIGN KEY(PostId) REFERENCES dbo.ForumPosts(Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ForumComments_User FOREIGN KEY(UserId) REFERENCES dbo.Users(Id),
+  CONSTRAINT FK_ForumComments_Parent FOREIGN KEY(ParentId) REFERENCES dbo.ForumComments(Id)
+);
+IF OBJECT_ID('dbo.ForumPostLikes','U') IS NULL
+CREATE TABLE dbo.ForumPostLikes (
+  PostId UNIQUEIDENTIFIER NOT NULL,
+  UserId UNIQUEIDENTIFIER NOT NULL,
+  CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT PK_ForumPostLikes PRIMARY KEY(PostId,UserId),
+  CONSTRAINT FK_ForumPostLikes_Post FOREIGN KEY(PostId) REFERENCES dbo.ForumPosts(Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ForumPostLikes_User FOREIGN KEY(UserId) REFERENCES dbo.Users(Id) ON DELETE CASCADE
+);
+IF OBJECT_ID('dbo.ForumPostShares','U') IS NULL
+CREATE TABLE dbo.ForumPostShares (
+  Id UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+  PostId UNIQUEIDENTIFIER NOT NULL,
+  UserId UNIQUEIDENTIFIER NULL,
+  CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT FK_ForumPostShares_Post FOREIGN KEY(PostId) REFERENCES dbo.ForumPosts(Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ForumPostShares_User FOREIGN KEY(UserId) REFERENCES dbo.Users(Id)
+);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_ForumPosts_CreatedAt')
+CREATE INDEX IX_ForumPosts_CreatedAt ON dbo.ForumPosts(CreatedAt DESC);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_ForumComments_PostId')
+CREATE INDEX IX_ForumComments_PostId ON dbo.ForumComments(PostId,CreatedAt);
+
 `;
-await pool.request().batch(schema);
+await pool.request()
+  .input('Content', sql.NVarChar(sql.MAX), schema)
+  .query('EXEC sys.sp_executesql @Content');
 console.log('Đã khởi tạo các bảng SQL Server.');
 process.exit(0);

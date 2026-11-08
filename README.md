@@ -93,3 +93,39 @@ Chỉ chạy `npm run db:init` khi bạn chủ động cần khởi tạo schema
 Phiên bản này bổ sung phần giới thiệu cá nhân, liên kết hồ sơ người đăng từ thẻ tin, nút nhắn tin ở hồ sơ công khai, bộ lọc nhà môi giới theo loại giao dịch/loại bất động sản và quy trình yêu cầu đổi số điện thoại chờ quản trị viên duyệt.
 
 Nếu dùng SQL Server, hãy chạy lại bước khởi tạo/cập nhật schema theo hướng dẫn dự án (`backend/src/init-db.js`) để bổ sung các cột `Bio`, `PendingPhone` và `PhoneChangeStatus` cho bảng `Users`, sau đó khởi động lại backend. Các cột được thêm bằng `IF COL_LENGTH` nên không ảnh hưởng dữ liệu người dùng hiện có.
+
+## Chạy bằng Docker Desktop
+
+Bản Docker này đóng gói frontend và backend thành 2 container. SQL Server được kết nối từ máy Windows (host) để dùng lại database hiện có; ảnh tiếp tục lưu trên Cloudinary.
+
+1. Cài và mở Docker Desktop, chờ trạng thái **Engine running**.
+2. Tạo file `backend/.env` từ `backend/.env.docker.example`. Nếu đã có `backend/.env` đang chạy tốt thì giữ file đó và chỉ sửa `DB_SERVER=host.docker.internal`, `DB_ENCRYPT=false` (nếu SQL Server local không dùng mã hóa), cùng các thông tin cần thiết. Không ghi đè thông tin Cloudinary, SMTP hoặc JWT hiện tại.
+3. Đảm bảo SQL Server trên Windows đang chạy, TCP/IP đã bật và cổng `1433` được mở; database `DaNangRealEstate` đã tồn tại. Tài khoản trong `.env` phải được phép đăng nhập từ Docker.
+4. Mở PowerShell tại thư mục gốc `DaNangRealEstate`, chạy:
+
+```powershell
+docker compose config
+docker compose up -d --build
+docker compose ps
+docker compose logs -f backend
+```
+
+5. Mở website tại **http://localhost:8080**. Frontend sẽ chuyển tiếp `/api` và `/ws` tới backend trong mạng Docker.
+
+Nếu database chưa có schema, chạy lệnh sau một lần sau khi SQL Server đã sẵn sàng và file `.env` đúng:
+
+```powershell
+docker compose exec backend node src/init-db.js
+```
+
+Các lệnh quản lý:
+
+```powershell
+docker compose logs -f
+docker compose down
+docker compose up -d --build
+```
+
+`docker compose down` không xóa database SQL Server trên Windows. Không dùng `docker compose down -v` nếu chưa hiểu rõ tác động tới volume của các dịch vụ khác.
+
+**Lưu ý:** Docker không tự tạo SQL Server trên máy Windows. Nếu SQL Server của bạn cũng nằm trong Docker hoặc trên máy khác, hãy thay `DB_SERVER` bằng tên service/container hoặc địa chỉ máy chủ tương ứng; không dùng `localhost` bên trong container backend.

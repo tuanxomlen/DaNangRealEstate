@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Search, Heart, MapPin, BedDouble, Ruler, ArrowRight, Menu, X, UserRound, Plus, Building2, ShieldCheck, Eye, Trash2, Pencil, LogOut, LayoutDashboard, CheckCircle, SlidersHorizontal, Phone, KeyRound, Coins, Rocket, Users, MessageCircle, Send, ArrowLeft, Flag, Clock, Settings, Sun, Moon, Bell, Megaphone, CheckCheck, CalendarDays, Calculator, MapPinned, ExternalLink, List, Newspaper, RefreshCw, Clock3 } from 'lucide-react';
+import { Search, Heart, MapPin, BedDouble, Ruler, ArrowRight, Menu, X, UserRound, Plus, Building2, ShieldCheck, Eye, Trash2, Pencil, LogOut, LayoutDashboard, CheckCircle, SlidersHorizontal, Phone, KeyRound, Coins, Rocket, Users, MessageCircle, Send, ArrowLeft, Flag, Clock, Settings, Sun, Moon, Bell, Megaphone, CheckCheck, CalendarDays, Calculator, MapPinned, ExternalLink, List, Newspaper, RefreshCw, Clock3, Image as ImageIcon, ThumbsUp, Share2, MessageSquare, MoreHorizontal, SendHorizontal } from 'lucide-react';
 import { api, clearSession, getSavedUser, getToken, getWebSocketUrl, money, moneyWords, saveSession } from './api.js';
 import { VerifiedBadge, SupportBadge, AdminBadge, UserRoleBadges, TierTag, VerifiedListingTag, MoneyInput, TierPicker, BoostModal, TokensPage, TokensAdmin, useTiers } from './tokens.jsx';
 
@@ -68,6 +68,7 @@ function Header({ user, logout, theme, toggleTheme }) {
         <NavLink to="/agents" onClick={() => { setMobile(false); setShowMeMenu(false); }}><Users size={15}/> Nhà môi giới</NavLink>
         <NavLink to="/map" onClick={() => { setMobile(false); setShowMeMenu(false); }}><MapPinned size={15}/> Bản đồ</NavLink>
         <NavLink to="/news" onClick={() => { setMobile(false); setShowMeMenu(false); }}><Newspaper size={15}/> Tin tức</NavLink>
+        <NavLink to="/forum" onClick={() => { setMobile(false); setShowMeMenu(false); }}><MessageSquare size={15}/> Diễn đàn</NavLink>
         {['Admin','Support'].includes(user?.role) && <NavLink className="admin-nav-link" to="/admin" onClick={() => setMobile(false)}><ShieldCheck size={15}/> {user.role === 'Support' ? 'Đội ngũ Support' : 'Quản trị viên'}</NavLink>}
       </nav>
     </div>
@@ -90,7 +91,7 @@ function PropertyCard({ p, favorite, onFavorite }) {
   </article>;
 }
 function Footer() {
-  return <footer className="footer"><div className="container footer-grid"><div><Link className="brand brand-light" to="/"><span className="brand-icon"><Building2 size={22}/></span><span>DaNang<span className="brand-accent">RealEstate</span><small>BẤT ĐỘNG SẢN ĐÀ NẴNG</small></span></Link><p>Nền tảng tìm kiếm và khám phá bất động sản tại Đà Nẵng.</p></div><div><strong>Khám phá</strong><Link to="/properties">Mua bán nhà đất</Link><Link to="/map">Bản đồ bất động sản</Link><Link to="/tools/calculator">Tính khoản vay</Link><Link to="/appointments">Lịch xem nhà</Link><Link to="/properties?transaction=Cho%20thu%C3%AA">Bất động sản cho thuê</Link><Link to="/post">Đăng tin bất động sản</Link><Link to="/tokens">Điểm token & gói ưu tiên</Link></div><div><strong>Khu vực phổ biến</strong>{districts.slice(0,4).map(d => <Link key={d} to={`/properties?district=${encodeURIComponent(d)}`}>{d}</Link>)}</div><div><strong>Liên hệ</strong><span><MapPin size={15}/> Đà Nẵng, Việt Nam</span><a href="mailto:lenhotuan14092005@gmail.com"><span><span aria-hidden="true">✉</span> Email: lenhotuan14092005@gmail.com</span></a><a href="tel:0374094678"><span><Phone size={15}/> Điện thoại: 0374094678</span></a><a href="https://zalo.me/0374094678" target="_blank" rel="noreferrer"><span><MessageCircle size={15}/> Zalo: 0374094678</span></a></div></div><div className="footer-bottom">© {new Date().getFullYear()} DaNangRealEstate. Website demo.</div></footer>;
+  return <footer className="footer"><div className="container footer-grid"><div><Link className="brand brand-light" to="/"><span className="brand-icon"><Building2 size={22}/></span><span>DaNang<span className="brand-accent">RealEstate</span><small>BẤT ĐỘNG SẢN ĐÀ NẴNG</small></span></Link><p>Nền tảng tìm kiếm và khám phá bất động sản tại Đà Nẵng.</p></div><div><strong>Khám phá</strong><Link to="/properties">Mua bán nhà đất</Link><Link to="/map">Bản đồ bất động sản</Link><Link to="/tools/calculator">Tính khoản vay</Link><Link to="/appointments">Lịch xem nhà</Link><Link to="/properties?transaction=Cho%20thu%C3%AA">Bất động sản cho thuê</Link><Link to="/post">Đăng tin bất động sản</Link><Link to="/tokens">Điểm token & gói ưu tiên</Link><Link to="/forum">Diễn đàn cộng đồng</Link><Link to="/faq">FAQ</Link><Link to="/terms">Điều khoản sử dụng</Link><Link to="/privacy">Chính sách</Link></div><div><strong>Khu vực phổ biến</strong>{districts.slice(0,4).map(d => <Link key={d} to={`/properties?district=${encodeURIComponent(d)}`}>{d}</Link>)}</div><div><strong>Liên hệ</strong><span><MapPin size={15}/> Đà Nẵng, Việt Nam</span><a href="mailto:lenhotuan14092005@gmail.com"><span><span aria-hidden="true">✉</span> Email: lenhotuan14092005@gmail.com</span></a><a href="tel:0374094678"><span><Phone size={15}/> Điện thoại: 0374094678</span></a><a href="https://zalo.me/0374094678" target="_blank" rel="noreferrer"><span><MessageCircle size={15}/> Zalo: 0374094678</span></a></div></div><div className="footer-bottom">© {new Date().getFullYear()} DaNangRealEstate. Website demo.</div></footer>;
 }
 function Home({ user }) {
   const [items, setItems] = useState([]); const [q, setQ] = useState(''); const [transaction, setTransaction] = useState(''); const [district, setDistrict] = useState('');
@@ -450,7 +451,7 @@ function ProfilePage({ user, refreshUser }) {
       <aside className="panel profile-summary"><AgentAvatar agent={{...user, totalListings: user.totalListings}}/><label className="avatar-upload-button">{avatarBusy ? 'Đang tải ảnh...' : 'Đổi ảnh đại diện'}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadAvatar} disabled={avatarBusy} hidden/></label><small className="avatar-help">JPG, PNG hoặc WEBP · tối đa 5 MB</small><h2>{user.name}</h2><p>{user.email}</p><div className="profile-badges"><span className="profile-role">{user.role === 'Admin' ? 'Quản trị viên' : user.role === 'Support' ? 'Đội ngũ Support' : 'Thành viên'}</span><UserRoleBadges user={user} /></div><RankProgress user={user}/><div className="profile-balance"><Coins size={23}/><span><small>Số dư token</small><strong>{Number(user.tokens || 0).toLocaleString('vi-VN')}</strong></span></div><Link className="btn btn-primary btn-block" to="/tokens">Quản lý token</Link><Link className="btn btn-outline btn-block" to="/my-properties">Tin đăng của tôi</Link></aside>
       <section className="profile-main">
         <div className="panel profile-id-card"><div><span className="section-kicker">ID TÀI KHOẢN DUY NHẤT</span><h3>Mã định danh của bạn</h3><p>Dùng chính xác ID này khi quản trị viên cấp token cho tài khoản.</p><code>{user.id}</code></div><button className="btn btn-primary" onClick={copyId}><KeyRound size={16}/> Sao chép ID</button></div>
-        <form className="panel profile-form" onSubmit={save}><h2>Thông tin cá nhân</h2><div className="profile-info-grid"><label>Họ và tên<input value={name} onChange={e=>setName(e.target.value)} required maxLength={100}/></label><label>Email<input value={user.email || ''} readOnly/></label><label>Số điện thoại<input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="Nhập số điện thoại" maxLength={30}/>{user.phoneChangeStatus==='Pending'&&<small className="phone-pending">Đang chờ admin duyệt số mới: {user.pendingPhone}</small>}{user.phoneChangeStatus==='Rejected'&&<small className="phone-rejected">Yêu cầu đổi số gần nhất đã bị từ chối. Bạn có thể gửi lại.</small>}</label><label>Trạng thái tài khoản<input value={user.status === 'Active' ? 'Đang hoạt động' : user.status || 'Chưa rõ'} readOnly/></label><label>Ngày tham gia<input value={user.createdAt ? new Date(user.createdAt).toLocaleDateString('vi-VN') : '—'} readOnly/></label></div>{error&&<div className="error-message">{error}</div>}{message&&<div className="success-message">{message}</div>}<button className="btn btn-primary" type="submit" disabled={busy}>{busy?'Đang lưu...':'Lưu thông tin'}</button></form>
+        <form className="panel profile-form" onSubmit={save}><h2>Thông tin cá nhân</h2><div className="profile-info-grid"><label>Họ và tên<input value={name} onChange={e=>setName(e.target.value)} required maxLength={100}/></label><label>Email<input value={user.email || ''} readOnly/></label><label>Số điện thoại<input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="Nhập số điện thoại" maxLength={30}/>{user.phoneChangeStatus==='Pending'&&<small className="phone-pending">Đang chờ admin duyệt số mới: {user.pendingPhone}</small>}{user.phoneChangeStatus==='Rejected'&&<small className="phone-rejected">Yêu cầu đổi số gần nhất đã bị từ chối. Bạn có thể gửi lại.</small>}</label><label className="profile-bio-field">Giới thiệu về bản thân<textarea value={bio} onChange={e=>setBio(e.target.value)} rows={5} maxLength={500} placeholder="Giới thiệu ngắn về bạn, nhu cầu BĐS, khu vực hoạt động..."/><small>{bio.length}/500 ký tự · Nội dung này hiển thị ở trang cá nhân và hồ sơ nhà môi giới.</small></label><label>Trạng thái tài khoản<input value={user.status === 'Active' ? 'Đang hoạt động' : user.status || 'Chưa rõ'} readOnly/></label><label>Ngày tham gia<input value={user.createdAt ? new Date(user.createdAt).toLocaleDateString('vi-VN') : '—'} readOnly/></label></div>{error&&<div className="error-message">{error}</div>}{message&&<div className="success-message">{message}</div>}<button className="btn btn-primary" type="submit" disabled={busy}>{busy?'Đang lưu...':'Lưu thông tin'}</button></form>
         <div className="profile-shortcuts"><Link to="/messages"><MessageCircle/><span><strong>Tin nhắn</strong><small>Trao đổi với người đăng tin</small></span><ArrowRight/></Link><Link to="/favorites"><Heart/><span><strong>Tin yêu thích</strong><small>Các bất động sản đã lưu</small></span><ArrowRight/></Link><Link to="/my-properties"><Building2/><span><strong>Tin đăng của tôi</strong><small>Theo dõi trạng thái tin đăng</small></span><ArrowRight/></Link></div>
       </section>
     </div>
@@ -603,6 +604,149 @@ function AppointmentsPage({user}){
  return <main className="container page-main"><div className="page-title-row"><div><span className="section-kicker">LỊCH HẸN</span><h1>Lịch xem nhà</h1><p>Theo dõi yêu cầu xem nhà bạn đã gửi hoặc nhận từ khách hàng.</p></div><button className="btn btn-outline" onClick={load}>Làm mới</button></div>{error&&<div className="error-message">{error}</div>}{loading?<div className="empty-state">Đang tải lịch hẹn...</div>:items.length?<div className="appointment-list">{items.map(a=><article className="panel appointment-card" key={a.id}><div><span className={`status status-${String(a.status).toLowerCase()}`}>{({Pending:'Chờ xác nhận',Accepted:'Đã xác nhận',Declined:'Đã từ chối',Completed:'Hoàn tất',Cancelled:'Đã hủy'})[a.status]||a.status}</span><h3><Link to={`/properties/${a.propertyId}`}>{a.propertyTitle}</Link></h3><p><CalendarDays size={15}/> {new Date(a.visitAt).toLocaleDateString('vi-VN')}</p><p><MapPin size={15}/> {a.address}</p><p>{a.buyerId===user.id?`Người liên hệ: ${a.ownerName}`:`Khách hàng: ${a.buyerName} · ${a.buyerPhone||a.buyerEmail}`}</p>{a.note&&<p>Ghi chú: {a.note}</p>}</div>{a.canManage&&a.ownerId===user.id&&a.status==='Pending'&&<div className="appointment-actions"><button className="btn btn-primary btn-small" onClick={()=>update(a,'Accepted')}>Xác nhận</button><button className="btn btn-outline btn-small" onClick={()=>update(a,'Declined')}>Từ chối</button></div>}{a.buyerId===user.id&&['Pending','Accepted'].includes(a.status)&&<button className="btn btn-outline btn-small" onClick={()=>update(a,'Cancelled')}>Hủy lịch</button>}</article>)}</div>:<div className="empty-state"><CalendarDays size={36}/><h3>Chưa có lịch xem nhà</h3><p>Mở tin bất động sản và chọn “Đặt lịch xem nhà” để gửi yêu cầu.</p><Link to="/properties" className="btn btn-primary">Khám phá bất động sản</Link></div>}</main>;
 }
 
+
+function ForumPage({user}) {
+  const [items,setItems]=useState([]), [loading,setLoading]=useState(true), [content,setContent]=useState(''), [images,setImages]=useState([]), [properties,setProperties]=useState([]), [propertyId,setPropertyId]=useState(''), [busy,setBusy]=useState(false);
+  const load=useCallback(()=>api('/forum/posts').then(d=>setItems(d.items||[])).catch(e=>alert(e.message)).finally(()=>setLoading(false)),[]);
+  useEffect(()=>{load(); if(user) api('/properties/mine').then(d=>setProperties(d.items||[])).catch(()=>{});},[load,user?.id]);
+  const uploadImages=async e=>{const files=[...e.target.files].slice(0,8-images.length); e.target.value=''; for(const file of files){if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024){alert('Ảnh phải là JPG, PNG, WEBP và tối đa 5 MB.');continue;} try{const dataUrl=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(new Error('Không đọc được ảnh'));r.readAsDataURL(file)});const d=await api('/uploads',{method:'POST',body:JSON.stringify({fileName:file.name,type:file.type,data:dataUrl,purpose:'forum'})});setImages(x=>[...x,d.url]);}catch(err){alert(err.message)}}};
+  const post=async e=>{e.preventDefault();if(!user)return alert('Vui lòng đăng nhập để đăng bài.');if(!content.trim())return;setBusy(true);try{await api('/forum/posts',{method:'POST',body:JSON.stringify({content,images,propertyId:propertyId||null})});setContent('');setImages([]);setPropertyId('');load()}catch(e){alert(e.message)}finally{setBusy(false)}};
+  const toggleLike=async id=>{if(!user)return alert('Vui lòng đăng nhập để thích bài viết.');const d=await api(`/forum/posts/${id}/like`,{method:'POST'});setItems(x=>x.map(p=>p.id===id?{...p,liked:d.liked,likes:d.likes}:p))};
+  const share=async p=>{try{await api(`/forum/posts/${p.id}/share`,{method:'POST'});const url=`${window.location.origin}/forum?post=${p.id}`;if(navigator.share)await navigator.share({title:'DaNangRealEstate',text:p.content.slice(0,120),url});else await navigator.clipboard.writeText(url);setItems(x=>x.map(a=>a.id===p.id?{...a,shares:a.shares+1}:a));alert(navigator.share?'Đã chia sẻ.':'Đã sao chép liên kết bài viết.')}catch(e){if(e.name!=='AbortError')alert(e.message)}};
+  return <main className="container page-main forum-page"><div className="page-title-row"><div><span className="section-kicker">CỘNG ĐỒNG ĐÀ NẴNG</span><h1>Diễn đàn tìm kiếm bất động sản</h1><p>Người mua, người thuê và môi giới có thể đăng nhu cầu, hình ảnh và trao đổi công khai.</p></div>{user&&<Link className="btn btn-primary" to="#forum-composer">Đăng bài tìm BĐS</Link>}</div>
+    {user?<form id="forum-composer" className="panel forum-composer" onSubmit={post}><div className="forum-compose-head">{user.avatarUrl?<img src={user.avatarUrl} alt=""/>:<UserRound/>}<div><strong>{user.name}</strong><span>Đang tìm BĐS ở khu vực nào? Ngân sách bao nhiêu?</span></div></div><textarea value={content} onChange={e=>setContent(e.target.value)} maxLength={5000} rows={5} placeholder="Ví dụ: Mình cần thuê căn hộ 2PN Sơn Trà, ngân sách 10-12 triệu/tháng..."></textarea>{images.length>0&&<div className="forum-image-preview">{images.map((url,i)=><div key={url}><img src={url} alt="Ảnh bài viết"/><button type="button" onClick={()=>setImages(x=>x.filter((_,j)=>j!==i))}>×</button></div>)}</div>}<div className="forum-compose-actions"><label className="btn btn-outline"><ImageIcon size={17}/> Thêm ảnh<input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={uploadImages}/></label><select value={propertyId} onChange={e=>setPropertyId(e.target.value)}><option value="">Gắn tin BĐS của tôi (không bắt buộc)</option>{properties.map(p=><option key={p.id} value={p.id}>{p.title}</option>)}</select><button className="btn btn-primary" disabled={busy||!content.trim()}><SendHorizontal size={17}/>{busy?'Đang đăng...':'Đăng bài'}</button></div><small className="forum-note">Chỉ các tin BĐS do chính tài khoản của bạn đăng mới được phép gắn vào bài viết.</small></form>:<div className="panel forum-login-note"><strong>Muốn đăng bài?</strong><span>Đăng nhập để tìm người bán, người cho thuê và nhà môi giới phù hợp.</span><Link className="btn btn-primary" to="/login">Đăng nhập</Link></div>}
+    <div className="forum-feed">{loading?<div className="empty-state">Đang tải diễn đàn...</div>:items.length?items.map(p=><ForumPostCard key={p.id} post={p} user={user} onLike={()=>toggleLike(p.id)} onShare={()=>share(p)} onReload={load}/>):<div className="empty-state"><MessageSquare size={36}/><h3>Chưa có bài viết</h3><p>Hãy là người đầu tiên đăng nhu cầu tìm bất động sản.</p></div>}</div>
+  </main>;
+}
+function ForumPostCard({post,user,onLike,onShare,onReload}) {
+  const [comments, setComments] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [replyTo, setReplyTo] = useState(null);
+
+  const loadComments = () =>
+    api(`/forum/posts/${post.id}`)
+      .then(d => setComments(d.comments || []))
+      .catch(e => alert(e.message));
+
+  const toggle = () => {
+    if (!open) loadComments();
+    setOpen(!open);
+  };
+
+  const send = async e => {
+    e.preventDefault();
+    if (!draft.trim()) return;
+    try {
+      await api(`/forum/posts/${post.id}/comments`, {
+        method: 'POST',
+        body: JSON.stringify({
+          content: draft,
+          parentId: replyTo || null,
+        }),
+      });
+      setDraft('');
+      setReplyTo(null);
+      loadComments();
+      if (onReload) onReload();
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  return (
+    <article className="panel forum-post">
+      <div className="forum-post-head">
+        {post.avatarUrl ? <img src={post.avatarUrl} alt="" /> : <UserRound />}
+        <div className="forum-author">
+          <strong>{post.userName}</strong>
+          {post.verified && <VerifiedBadge size={15} />}
+          <small>{new Date(post.createdAt).toLocaleString('vi-VN')}</small>
+        </div>
+        <button className="icon-btn" title="Tùy chọn">
+          <MoreHorizontal size={19} />
+        </button>
+      </div>
+
+      <p className="forum-content">{post.content}</p>
+
+      {post.images?.length > 0 && (
+        <div className={`forum-post-images count-${Math.min(post.images.length, 4)}`}>
+          {post.images.map(url => (
+            <img key={url} src={url} alt="Ảnh bài viết" />
+          ))}
+        </div>
+      )}
+
+      {post.property && (
+        <Link className="forum-property-card" to={`/properties/${post.property.id}`}>
+          <img src={post.property.coverImage || FALLBACK} alt="" />
+          <div>
+            <strong>{post.property.title}</strong>
+            <span>{money(post.property.price, post.property.transaction)}</span>
+          </div>
+          <ArrowRight size={16} />
+        </Link>
+      )}
+
+      <div className="forum-stats">
+        <span>{post.likes} lượt thích</span>
+        <span>{post.comments} bình luận</span>
+        <span>{post.shares} lượt chia sẻ</span>
+      </div>
+
+      <div className="forum-actions">
+        <button onClick={onLike} className={post.liked ? 'active' : ''}>
+          <ThumbsUp size={17} /> Thích
+        </button>
+        <button onClick={toggle}>
+          <MessageSquare size={17} /> Bình luận
+        </button>
+        <button onClick={onShare}>
+          <Share2 size={17} /> Chia sẻ
+        </button>
+      </div>
+
+      {open && (
+        <div className="forum-comments">
+          {comments.map(c => (
+            <div className={`forum-comment ${c.parentId ? 'reply' : ''}`} key={c.id}>
+              {c.avatarUrl ? <img src={c.avatarUrl} alt="" /> : <UserRound />}
+              <div>
+                <div>
+                  <strong>{c.userName}</strong>
+                  {c.verified && <VerifiedBadge size={13} />}
+                </div>
+                <p>{c.content}</p>
+                <small>{new Date(c.createdAt).toLocaleString('vi-VN')}</small>
+                <button type="button" onClick={() => setReplyTo(c.id)}>
+                  Trả lời
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {user && (
+            <form className="forum-comment-form" onSubmit={send}>
+              <input
+                value={draft}
+                onChange={e => setDraft(e.target.value)}
+                placeholder={replyTo ? 'Trả lời bình luận...' : 'Viết bình luận...'}
+                maxLength={2000}
+              />
+              <button className="btn btn-primary btn-small">Gửi</button>
+            </form>
+          )}
+
+          {!user && <p className="forum-note">Đăng nhập để bình luận.</p>}
+        </div>
+      )}
+    </article>
+  );
+}
+
+function InfoPage({type}){const data={faq:{title:'FAQ',kicker:'GIẢI ĐÁP',items:[['Tôi có thể đăng tin như thế nào?','Đăng nhập, chọn Đăng tin, nhập đầy đủ thông tin và gửi duyệt.'],['Làm sao để tìm BĐS?','Dùng thanh tìm kiếm hoặc bộ lọc theo nhu cầu, khu vực, giá và loại BĐS.'],['Có thể gắn tin vào bài diễn đàn không?','Có. Bạn chỉ được gắn những tin BĐS do chính tài khoản của bạn đăng.'],['Làm sao báo cáo tin xấu?','Mở tin BĐS và chọn Báo cáo tin để gửi lý do cho quản trị viên.']]},terms:{title:'Điều khoản sử dụng',kicker:'QUY ĐỊNH',items:[['Sử dụng dịch vụ','Người dùng chịu trách nhiệm về tính chính xác của thông tin mình đăng.'],['Nội dung cấm','Không đăng thông tin giả, lừa đảo, vi phạm pháp luật hoặc xâm phạm quyền của người khác.'],['Tin BĐS','DaNangRealEstate là nền tảng kết nối; người dùng cần tự kiểm tra pháp lý và thông tin trước giao dịch.'],['Diễn đàn','Không spam, xúc phạm, mạo danh hoặc đăng nội dung trái pháp luật. Nội dung vi phạm có thể bị gỡ.']]},privacy:{title:'Chính sách',kicker:'CHÍNH SÁCH',items:[['Thông tin tài khoản','Hệ thống lưu các thông tin cần thiết để tạo tài khoản và vận hành dịch vụ.'],['Ảnh và nội dung','Ảnh, bài viết và tin BĐS do người dùng đăng có thể được hiển thị công khai theo chức năng của website.'],['Bảo mật','Không chia sẻ mật khẩu, OTP hoặc thông tin thanh toán nhạy cảm qua diễn đàn và tin nhắn.'],['Quản lý dữ liệu','Người dùng có thể yêu cầu hỗ trợ khi cần chỉnh sửa hoặc xử lý thông tin tài khoản.']]}}[type];return <main className="container page-main info-page"><div className="page-title-row"><div><span className="section-kicker">{data.kicker}</span><h1>{data.title}</h1></div></div><section className="panel info-content">{data.items.map(([q,a])=><article key={q}><h3>{q}</h3><p>{a}</p></article>)}</section></main>}
+
 export default function App(){
   const {user,setUser,logout,refreshUser}=useAuth();
   const [theme,setTheme] = useState(() => { try { return localStorage.getItem('dre-theme') || 'light'; } catch { return 'light'; } });
@@ -614,6 +758,10 @@ export default function App(){
     <Route path="/properties" element={<Properties user={user}/>}/>
     <Route path="/map" element={<MapPage/>}/>
     <Route path="/news" element={<RealEstateNewsPage/>}/>
+    <Route path="/forum" element={<ForumPage user={user}/>}/>
+    <Route path="/faq" element={<InfoPage type="faq"/>}/>
+    <Route path="/terms" element={<InfoPage type="terms"/>}/>
+    <Route path="/privacy" element={<InfoPage type="privacy"/>}/>
     <Route path="/agents" element={<AgentsPage/>}/>
     <Route path="/agents/:id" element={<AgentProfilePage user={user}/>}/>
     <Route path="/tools/calculator" element={<MortgageCalculator/>}/>

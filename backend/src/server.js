@@ -890,6 +890,12 @@ app.get('/api/properties', asyncRoute(async (req, res) => {
   });
 }));
 
+app.get('/api/properties/mine', auth, asyncRoute(async (req,res)=>{
+  const pool=await getPool();
+  const result=await pool.request().input('OwnerId',sql.UniqueIdentifier,req.user.id).query(`SELECT ${PROPERTY_COLUMNS} ${PROPERTY_FROM} WHERE p.OwnerId=@OwnerId ORDER BY p.CreatedAt DESC`);
+  res.json({items:result.recordset.map(mapProperty),total:result.recordset.length});
+}));
+
 app.get('/api/properties/:id', asyncRoute(async (req, res) => {
   const pool = await getPool();
   const property = await findPropertyById(req.params.id);
@@ -2242,6 +2248,114 @@ app.post('/api/messages/conversations/:id', auth, asyncRoute(async (req, res) =>
   return res.status(201).json({ message });
 }));
 
+
+// ==================== FORUM / CỘNG ĐỒNG ====================
+const publicForumPost = row => ({
+  id: row.id,
+  userId: row.userId,
+  userName: row.userName,
+  avatarUrl: row.avatarUrl || '',
+  verified: !!row.verified,
+  content: row.content,
+  images: (() => { try { return JSON.parse(row.imagesJson || '[]'); } catch { return []; } })(),
+  property: row.propertyId ? { id: row.propertyId, title: row.propertyTitle, price: Number(row.propertyPrice || 0), transaction: row.transactionType, coverImage: (() => { try { return JSON.parse(row.propertyImagesJson || '[]')[0] || ''; } catch { return ''; } })() } : null,
+  createdAt: row.createdAt,
+  updatedAt: row.updatedAt,
+  likes: Number(row.likeCount || 0),
+  comments: Number(row.commentCount || 0),
+  shares: Number(row.shareCount || 0),
+  liked: !!row.liked
+});
+
+app.get('/api/forum/posts', asyncRoute(async (req, res) => {
+  const pool = await getPool();
+  const userId = req.user?.id || null;
+  const result = await pool.request()
+    .input('UserId', sql.UniqueIdentifier, userId)
+    .query(`
+      SELECT TOP 50 fp.Id AS id, fp.UserId AS userId, u.FullName AS userName, u.AvatarUrl AS avatarUrl, u.IsVerified AS verified,
+        fp.Content AS content, fp.ImagesJson AS imagesJson, fp.PropertyId AS propertyId, fp.CreatedAt AS createdAt, fp.UpdatedAt AS updatedAt,
+        p.Title AS propertyTitle, p.Price AS propertyPrice, p.TransactionType AS transactionType, p.ImagesJson AS propertyImagesJson,
+        (SELECT COUNT(*) FROM dbo.ForumPostLikes l WHERE l.PostId=fp.Id) AS likeCount,
+        (SELECT COUNT(*) FROM dbo.ForumComments c WHERE c.PostId=fp.Id) AS commentCount,
+        (SELECT COUNT(*) FROM dbo.ForumPostShares s WHERE s.PostId=fp.Id) AS shareCount,
+        CASE WHEN @UserId IS NOT NULL AND EXISTS(SELECT 1 FROM dbo.ForumPostLikes l WHERE l.PostId=fp.Id AND l.UserId=@UserId) THEN 1 ELSE 0 END AS liked
+      FROM dbo.ForumPosts fp INNER JOIN dbo.Users u ON u.Id=fp.UserId
+      LEFT JOIN dbo.Properties p ON p.Id=fp.PropertyId
+      ORDER BY fp.CreatedAt DESC
+    `);
+  res.json({ items: result.recordset.map(publicForumPost) });
+}));
+
+app.get('/api/forum/posts/:id', asyncRoute(async (req, res) => {
+  const pool = await getPool();
+  const userId = req.user?.id || null;
+  const post = await pool.request().input('Id', sql.UniqueIdentifier, req.params.id).input('UserId', sql.UniqueIdentifier, userId).query(`
+    SELECT fp.Id AS id, fp.UserId AS userId, u.FullName AS userName, u.AvatarUrl AS avatarUrl, u.IsVerified AS verified,
+      fp.Content AS content, fp.ImagesJson AS imagesJson, fp.PropertyId AS propertyId, fp.CreatedAt AS createdAt, fp.UpdatedAt AS updatedAt,
+      p.Title AS propertyTitle, p.Price AS propertyPrice, p.TransactionType AS transactionType, p.ImagesJson AS propertyImagesJson,
+      (SELECT COUNT(*) FROM dbo.ForumPostLikes l WHERE l.PostId=fp.Id) AS likeCount,
+      (SELECT COUNT(*) FROM dbo.ForumComments c WHERE c.PostId=fp.Id) AS commentCount,
+      (SELECT COUNT(*) FROM dbo.ForumPostShares s WHERE s.PostId=fp.Id) AS shareCount,
+      CASE WHEN @UserId IS NOT NULL AND EXISTS(SELECT 1 FROM dbo.ForumPostLikes l WHERE l.PostId=fp.Id AND l.UserId=@UserId) THEN 1 ELSE 0 END AS liked
+    FROM dbo.ForumPosts fp INNER JOIN dbo.Users u ON u.Id=fp.UserId LEFT JOIN dbo.Properties p ON p.Id=fp.PropertyId WHERE fp.Id=@Id
+  `);
+  if (!post.recordset.length) return res.status(404).json({message:'Không tìm thấy bài viết.'});
+  const comments = await pool.request().input('PostId', sql.UniqueIdentifier, req.params.id).query(`
+    SELECT c.Id AS id,c.ParentId AS parentId,c.UserId AS userId,u.FullName AS userName,u.AvatarUrl AS avatarUrl,u.IsVerified AS verified,c.Content AS content,c.CreatedAt AS createdAt
+    FROM dbo.ForumComments c INNER JOIN dbo.Users u ON u.Id=c.UserId WHERE c.PostId=@PostId ORDER BY c.CreatedAt ASC
+  `);
+  res.json({ post: publicForumPost(post.recordset[0]), comments: comments.recordset });
+}));
+
+app.post('/api/forum/posts', auth, asyncRoute(async (req,res)=>{
+  const content=String(req.body?.content||'').trim();
+  let images=Array.isArray(req.body?.images)?req.body.images.filter(x=>typeof x==='string'&&/^https:\/\/res\.cloudinary\.com\//i.test(x)).slice(0,8):[];
+  const propertyId=req.body?.propertyId||null;
+  if(!content||content.length>5000) return res.status(400).json({message:'Nội dung bài viết phải từ 1 đến 5000 ký tự.'});
+  const pool=await getPool();
+  if(propertyId){
+    const owned=await pool.request().input('Id',sql.UniqueIdentifier,propertyId).input('UserId',sql.UniqueIdentifier,req.user.id).query(`SELECT Id FROM dbo.Properties WHERE Id=@Id AND OwnerId=@UserId`);
+    if(!owned.recordset.length) return res.status(403).json({message:'Bạn chỉ được gắn tin bất động sản do chính bạn đăng.'});
+  }
+  const id=randomUUID();
+  await pool.request().input('Id',sql.UniqueIdentifier,id).input('UserId',sql.UniqueIdentifier,req.user.id).input('Content',sql.NVarChar(sql.MAX),content).input('ImagesJson',sql.NVarChar(sql.MAX),JSON.stringify(images)).input('PropertyId',sql.UniqueIdentifier,propertyId).query(`INSERT INTO dbo.ForumPosts(Id,UserId,Content,ImagesJson,PropertyId) VALUES(@Id,@UserId,@Content,@ImagesJson,@PropertyId)`);
+  res.status(201).json({message:'Đã đăng bài.',id});
+}));
+
+app.delete('/api/forum/posts/:id', auth, asyncRoute(async(req,res)=>{
+  const pool=await getPool();
+  const q=await pool.request().input('Id',sql.UniqueIdentifier,req.params.id).input('UserId',sql.UniqueIdentifier,req.user.id).query(`SELECT Id FROM dbo.ForumPosts WHERE Id=@Id AND UserId=@UserId`);
+  if(!q.recordset.length) return res.status(404).json({message:'Không tìm thấy bài viết hoặc bạn không có quyền xóa.'});
+  await pool.request().input('Id',sql.UniqueIdentifier,req.params.id).query(`DELETE FROM dbo.ForumPosts WHERE Id=@Id`);
+  res.json({message:'Đã xóa bài viết.'});
+}));
+
+app.post('/api/forum/posts/:id/like', auth, asyncRoute(async(req,res)=>{
+  const pool=await getPool();
+  const exists=await pool.request().input('PostId',sql.UniqueIdentifier,req.params.id).input('UserId',sql.UniqueIdentifier,req.user.id).query(`SELECT 1 FROM dbo.ForumPostLikes WHERE PostId=@PostId AND UserId=@UserId`);
+  if(exists.recordset.length) await pool.request().input('PostId',sql.UniqueIdentifier,req.params.id).input('UserId',sql.UniqueIdentifier,req.user.id).query(`DELETE FROM dbo.ForumPostLikes WHERE PostId=@PostId AND UserId=@UserId`);
+  else await pool.request().input('PostId',sql.UniqueIdentifier,req.params.id).input('UserId',sql.UniqueIdentifier,req.user.id).query(`INSERT INTO dbo.ForumPostLikes(PostId,UserId) VALUES(@PostId,@UserId)`);
+  const c=await pool.request().input('PostId',sql.UniqueIdentifier,req.params.id).query(`SELECT COUNT(*) AS n FROM dbo.ForumPostLikes WHERE PostId=@PostId`);
+  res.json({liked:!exists.recordset.length,likes:Number(c.recordset[0].n)});
+}));
+
+app.post('/api/forum/posts/:id/share', asyncRoute(async(req,res)=>{
+  const pool=await getPool();
+  await pool.request().input('Id',sql.UniqueIdentifier,randomUUID()).input('PostId',sql.UniqueIdentifier,req.params.id).input('UserId',sql.UniqueIdentifier,req.user?.id||null).query(`INSERT INTO dbo.ForumPostShares(Id,PostId,UserId) VALUES(@Id,@PostId,@UserId)`);
+  const c=await pool.request().input('PostId',sql.UniqueIdentifier,req.params.id).query(`SELECT COUNT(*) AS n FROM dbo.ForumPostShares WHERE PostId=@PostId`);
+  res.json({shares:Number(c.recordset[0].n)});
+}));
+
+app.post('/api/forum/posts/:id/comments', auth, asyncRoute(async(req,res)=>{
+  const content=String(req.body?.content||'').trim(); if(!content||content.length>2000)return res.status(400).json({message:'Bình luận phải từ 1 đến 2000 ký tự.'});
+  const parentId=req.body?.parentId||null; const pool=await getPool();
+  if(parentId){const ok=await pool.request().input('Id',sql.UniqueIdentifier,parentId).input('PostId',sql.UniqueIdentifier,req.params.id).query(`SELECT Id FROM dbo.ForumComments WHERE Id=@Id AND PostId=@PostId`);if(!ok.recordset.length)return res.status(400).json({message:'Bình luận cha không hợp lệ.'});}
+  const id=randomUUID();
+  const r=await pool.request().input('Id',sql.UniqueIdentifier,id).input('PostId',sql.UniqueIdentifier,req.params.id).input('UserId',sql.UniqueIdentifier,req.user.id).input('ParentId',sql.UniqueIdentifier,parentId).input('Content',sql.NVarChar(2000),content).query(`INSERT INTO dbo.ForumComments(Id,PostId,UserId,ParentId,Content) OUTPUT INSERTED.Id AS id,INSERTED.ParentId AS parentId,INSERTED.UserId AS userId,INSERTED.Content AS content,INSERTED.CreatedAt AS createdAt VALUES(@Id,@PostId,@UserId,@ParentId,@Content)`);
+  res.status(201).json({comment:{...r.recordset[0],userName:req.user.name,avatarUrl:req.user.avatarUrl||'',verified:!!req.user.verified}});
+}));
+
 // ==================== ERROR HANDLING ====================
 
 app.use((req, res) => {
@@ -2395,6 +2509,68 @@ async function ensureMessagingSchema() {
   `);
 }
 
+async function ensureForumSchema() {
+  const pool = await getPool();
+  await pool.request().query(`
+    -- Tương thích dữ liệu cũ: bảo đảm Users có các cột mà Diễn đàn sử dụng.
+    IF OBJECT_ID('dbo.Users','U') IS NOT NULL AND COL_LENGTH('dbo.Users','AvatarUrl') IS NULL
+      ALTER TABLE dbo.Users ADD AvatarUrl NVARCHAR(1000) NULL;
+    IF OBJECT_ID('dbo.Users','U') IS NOT NULL AND COL_LENGTH('dbo.Users','IsVerified') IS NULL
+      ALTER TABLE dbo.Users ADD IsVerified BIT NOT NULL CONSTRAINT DF_Users_IsVerified_Forum DEFAULT 0;
+
+    IF OBJECT_ID('dbo.ForumPosts','U') IS NULL
+    CREATE TABLE dbo.ForumPosts (
+      Id UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+      UserId UNIQUEIDENTIFIER NOT NULL,
+      Content NVARCHAR(MAX) NOT NULL,
+      ImagesJson NVARCHAR(MAX) NULL,
+      PropertyId UNIQUEIDENTIFIER NULL,
+      CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+      UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+      CONSTRAINT FK_ForumPosts_User FOREIGN KEY(UserId) REFERENCES dbo.Users(Id),
+      CONSTRAINT FK_ForumPosts_Property FOREIGN KEY(PropertyId) REFERENCES dbo.Properties(Id)
+    );
+
+    IF OBJECT_ID('dbo.ForumComments','U') IS NULL
+    CREATE TABLE dbo.ForumComments (
+      Id UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+      PostId UNIQUEIDENTIFIER NOT NULL,
+      UserId UNIQUEIDENTIFIER NOT NULL,
+      ParentId UNIQUEIDENTIFIER NULL,
+      Content NVARCHAR(2000) NOT NULL,
+      CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+      CONSTRAINT FK_ForumComments_Post FOREIGN KEY(PostId) REFERENCES dbo.ForumPosts(Id) ON DELETE CASCADE,
+      CONSTRAINT FK_ForumComments_User FOREIGN KEY(UserId) REFERENCES dbo.Users(Id),
+      CONSTRAINT FK_ForumComments_Parent FOREIGN KEY(ParentId) REFERENCES dbo.ForumComments(Id)
+    );
+
+    IF OBJECT_ID('dbo.ForumPostLikes','U') IS NULL
+    CREATE TABLE dbo.ForumPostLikes (
+      PostId UNIQUEIDENTIFIER NOT NULL,
+      UserId UNIQUEIDENTIFIER NOT NULL,
+      CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+      CONSTRAINT PK_ForumPostLikes PRIMARY KEY(PostId,UserId),
+      CONSTRAINT FK_ForumPostLikes_Post FOREIGN KEY(PostId) REFERENCES dbo.ForumPosts(Id) ON DELETE CASCADE,
+      CONSTRAINT FK_ForumPostLikes_User FOREIGN KEY(UserId) REFERENCES dbo.Users(Id) ON DELETE CASCADE
+    );
+
+    IF OBJECT_ID('dbo.ForumPostShares','U') IS NULL
+    CREATE TABLE dbo.ForumPostShares (
+      Id UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+      PostId UNIQUEIDENTIFIER NOT NULL,
+      UserId UNIQUEIDENTIFIER NULL,
+      CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+      CONSTRAINT FK_ForumPostShares_Post FOREIGN KEY(PostId) REFERENCES dbo.ForumPosts(Id) ON DELETE CASCADE,
+      CONSTRAINT FK_ForumPostShares_User FOREIGN KEY(UserId) REFERENCES dbo.Users(Id)
+    );
+
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_ForumPosts_CreatedAt')
+      CREATE INDEX IX_ForumPosts_CreatedAt ON dbo.ForumPosts(CreatedAt DESC);
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_ForumComments_PostId')
+      CREATE INDEX IX_ForumComments_PostId ON dbo.ForumComments(PostId,CreatedAt);
+  `);
+}
+
 async function ensureNotificationSchema() {
   const pool = await getPool();
   await pool.request().query(`
@@ -2457,6 +2633,7 @@ async function startServer() {
 
   await getPool();
   await ensureMessagingSchema();
+  await ensureForumSchema();
   await ensureNotificationSchema();
   await seedAdminSql();
   await autoApproveMatureListings();

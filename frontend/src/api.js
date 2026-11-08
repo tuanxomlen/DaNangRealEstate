@@ -3,7 +3,11 @@ const API = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 export function getToken() { return localStorage.getItem('dnre_token'); }
 export function getWebSocketUrl() {
   const base = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
-  const wsBase = base.replace(/^https:/i, 'wss:').replace(/^http:/i, 'ws:').replace(/\/api\/?$/i, '');
+  // Khi chạy Docker/Nginx, API dùng đường dẫn tương đối /api nên WebSocket
+  // phải lấy host hiện tại của trình duyệt thay vì tạo URL /ws tương đối.
+  const wsBase = base.startsWith('/')
+    ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`
+    : base.replace(/^https:/i, 'wss:').replace(/^http:/i, 'ws:').replace(/\/api\/?$/i, '');
   return `${wsBase}/ws?token=${encodeURIComponent(getToken() || '')}`;
 }
 export function saveSession(data) {
