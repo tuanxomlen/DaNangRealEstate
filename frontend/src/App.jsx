@@ -18,9 +18,31 @@ function useAuth() {
 function Header({ user, logout, theme, toggleTheme }) {
   const [mobile, setMobile] = useState(false);
   const [showMeMenu, setShowMeMenu] = useState(false);
+  const mobileAccountDropdownRef = useRef(null);
+  const mobileAccountTriggerRef = useRef(null);
   const [unread, setUnread] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const location = useLocation();
+  const navigate = useNavigate();
+  const openNotifications = async e => {
+    e.preventDefault();
+    if (user) { try { await api('/notifications/viewed', { method: 'POST' }); setUnread(0); } catch {} }
+    navigate('/notifications');
+  };
+  useEffect(() => {
+    if (!mobile || !showMeMenu) return;
+    const closeOnOutside = event => {
+      if (mobileAccountDropdownRef.current?.contains(event.target) || mobileAccountTriggerRef.current?.contains(event.target)) return;
+      setShowMeMenu(false);
+    };
+    const closeOnEscape = event => { if (event.key === 'Escape') setShowMeMenu(false); };
+    document.addEventListener('pointerdown', closeOnOutside);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutside);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [mobile, showMeMenu]);
   useEffect(() => {
     if (!user) { setUnread(0); setUnreadMessages(0); return; }
     let active = true;
@@ -38,7 +60,7 @@ function Header({ user, logout, theme, toggleTheme }) {
         <Link className="brand" to="/"><span className="brand-icon"><Building2 size={22}/></span><span>DaNang<span className="brand-accent">RealEstate</span><small>BẤT ĐỘNG SẢN ĐÀ NẴNG</small></span></Link>
         <div className="header-account">
           {user ? <>
-            <Link className="notification-link" to="/notifications" title="Thông báo"><Bell size={18}/>{unread>0&&<span>{unread>99?'99+':unread}</span>}</Link>
+            <Link className="notification-link" to="/notifications" onClick={openNotifications} title="Thông báo"><Bell size={18}/>{unread>0&&<span>{unread>99?'99+':unread}</span>}</Link>
             <Link className="account-token" to="/profile"><Coins size={16}/><span>{Number(user.tokens || 0).toLocaleString('vi-VN')} token</span></Link>
             <Link className="header-contact-link" to="/messages" title="Liên hệ, xem tin nhắn mới"><MessageCircle size={17}/><span>Liên hệ</span>{unreadMessages>0&&<span className="contact-unread-badge">{unreadMessages>99?'99+':unreadMessages}</span>}</Link>
             <div className={`account-me-menu ${showMeMenu ? 'is-open' : ''}`}>
@@ -62,6 +84,21 @@ function Header({ user, logout, theme, toggleTheme }) {
         </div>
       </div>
       <nav className={`nav-links ${mobile ? 'open' : ''}`}>
+        {user&&<div className="mobile-account-menu">
+          <div className="mobile-account-summary">{user.avatarUrl?<img src={user.avatarUrl} alt=""/>:<UserRound size={22}/>}<span><strong>{user.name}</strong><small>{user.email}</small></span></div>
+          <button ref={mobileAccountTriggerRef} type="button" className="mobile-account-trigger" aria-expanded={showMeMenu} onClick={()=>setShowMeMenu(value=>!value)}><UserRound size={16}/> {'T\u00f4i'} <ArrowRight size={15}/></button>
+          {showMeMenu&&<div ref={mobileAccountDropdownRef} className="mobile-account-dropdown">
+            <NavLink to="/my-properties" onClick={()=>{setMobile(false);setShowMeMenu(false)}}><Building2 size={16}/> {'Tin c\u1ee7a t\u00f4i'}</NavLink>
+            <NavLink to="/messages" onClick={()=>{setMobile(false);setShowMeMenu(false)}}><MessageCircle size={16}/> {'Tin nh\u1eafn'}</NavLink>
+            <NavLink to="/tools/calculator" onClick={()=>{setMobile(false);setShowMeMenu(false)}}><Calculator size={16}/> {'T\u00ednh kho\u1ea3n vay'}</NavLink>
+            <NavLink to="/appointments" onClick={()=>{setMobile(false);setShowMeMenu(false)}}><CalendarDays size={16}/> {'L\u1ecbch xem nh\u00e0'}</NavLink>
+            <NavLink to="/favorites" onClick={()=>{setMobile(false);setShowMeMenu(false)}}><Heart size={16}/> {'Tin y\u00eau th\u00edch'}</NavLink>
+            <NavLink to="/notifications" onClick={()=>{setMobile(false);setShowMeMenu(false)}}><Bell size={16}/> {'Th\u00f4ng b\u00e1o'} {unread>0?`(${unread})`:''}</NavLink>
+            <NavLink to="/profile" onClick={()=>{setMobile(false);setShowMeMenu(false)}}><Settings size={16}/> {'T\u00e0i kho\u1ea3n c\u1ee7a t\u00f4i'}</NavLink>
+            {['Admin','Support'].includes(user.role)&&<NavLink to="/admin" onClick={()=>{setMobile(false);setShowMeMenu(false)}}><ShieldCheck size={16}/>{user.role==='Support'?'\u0110\u1ed9i ng\u0169 Support':'\u0051u\u1ea3n tr\u1ecb vi\u00ean'}</NavLink>}
+            <button type="button" className="mobile-account-logout" onClick={()=>{setMobile(false);setShowMeMenu(false);logout()}}><LogOut size={16}/> {'\u0110\u0103ng xu\u1ea5t'}</button>
+          </div>}
+        </div>}
         <NavLink to="/" end onClick={() => setMobile(false)}>Trang chủ</NavLink>
         <NavLink to="/properties?transaction=B%C3%A1n" className={() => currentTransaction === 'Bán' ? 'active' : ''} onClick={() => setMobile(false)}>Mua bán</NavLink>
         <NavLink to="/properties?transaction=Cho%20thu%C3%AA" className={() => currentTransaction === 'Cho thuê' ? 'active' : ''} onClick={() => setMobile(false)}>Cho thuê</NavLink>
@@ -459,13 +496,15 @@ function ProfilePage({ user, refreshUser }) {
 }
 
 function NotificationsPage({ user }) {
+  const navigate=useNavigate();
   const [items,setItems]=useState([]); const [loading,setLoading]=useState(true); const [error,setError]=useState('');
   const load=useCallback(()=>api('/notifications').then(d=>setItems(d.items||[])).catch(e=>setError(e.message)).finally(()=>setLoading(false)),[]);
   useEffect(()=>{if(user)load();else setLoading(false)},[user,load]);
   const markRead=async n=>{if(n.readAt)return;try{await api(`/notifications/${n.id}/read`,{method:'PATCH'});setItems(old=>old.map(x=>x.id===n.id?{...x,readAt:new Date().toISOString()}:x))}catch(e){alert(e.message)}};
+  const openNotification=async n=>{await markRead(n);if(['ForumComment','ForumReply'].includes(n.type)&&n.relatedId)navigate(`/forum?post=${encodeURIComponent(n.relatedId)}`)};
   const markAll=async()=>{try{await api('/notifications/read-all',{method:'POST'});setItems(old=>old.map(x=>({...x,readAt:x.readAt||new Date().toISOString()})))}catch(e){alert(e.message)}};
   if(!user)return <main className="container page-main"><div className="empty-state"><Bell size={34}/><h2>Đăng nhập để xem thông báo</h2><Link className="btn btn-primary" to="/login">Đăng nhập</Link></div></main>;
-  return <main className="container page-main notifications-page"><div className="page-title-row"><div><span className="section-kicker">TRUNG TÂM THÔNG TIN</span><h1>Thông báo</h1><p>Thông tin mới nhất từ DaNangRealEstate và trạng thái tin đăng của bạn.</p></div>{items.some(n=>!n.readAt)&&<button className="btn btn-outline" onClick={markAll}><CheckCheck size={16}/> Đánh dấu tất cả đã đọc</button>}</div>{error&&<div className="error-message">{error}</div>}{loading?<div className="empty-state">Đang tải thông báo...</div>:items.length?<div className="notification-list">{items.map(n=><article key={n.id} className={`notification-item ${!n.readAt?'unread':''}`} onClick={()=>markRead(n)}><div className="notification-item-icon"><Bell size={18}/></div><div className="notification-item-content"><div className="notification-item-heading"><strong>{n.title}</strong>{!n.readAt&&<span className="unread-dot">Mới</span>}</div><p>{n.body}</p><small>{new Date(n.createdAt).toLocaleString('vi-VN')}</small></div></article>)}</div>:<div className="empty-state"><Bell size={34}/><h3>Bạn chưa có thông báo</h3><p>Khi quản trị viên gửi thông báo, nội dung sẽ xuất hiện tại đây.</p></div>}</main>;
+  return <main className="container page-main notifications-page"><div className="page-title-row"><div><span className="section-kicker">TRUNG TÂM THÔNG TIN</span><h1>Thông báo</h1><p>Thông tin mới nhất từ DaNangRealEstate và trạng thái tin đăng của bạn.</p></div>{items.some(n=>!n.readAt)&&<button className="btn btn-outline" onClick={markAll}><CheckCheck size={16}/> Đánh dấu tất cả đã đọc</button>}</div>{error&&<div className="error-message">{error}</div>}{loading?<div className="empty-state">Đang tải thông báo...</div>:items.length?<div className="notification-list">{items.map(n=><article key={n.id} className={`notification-item ${!n.readAt?'unread':''}`} onClick={()=>openNotification(n)}><div className="notification-item-icon"><Bell size={18}/></div><div className="notification-item-content"><div className="notification-item-heading"><strong>{n.title}</strong>{!n.readAt&&<span className="unread-dot">Mới</span>}</div><p>{n.body}</p><small>{new Date(n.createdAt).toLocaleString('vi-VN')}</small></div></article>)}</div>:<div className="empty-state"><Bell size={34}/><h3>Bạn chưa có thông báo</h3><p>Khi quản trị viên gửi thông báo, nội dung sẽ xuất hiện tại đây.</p></div>}</main>;
 }
 
 function Admin({user}) {
@@ -528,7 +567,13 @@ function SecurityAdmin(){
  const [data,setData]=useState(null);const [error,setError]=useState('');const load=()=>api('/admin/security').then(setData).catch(e=>setError(e.message));useEffect(()=>{load()},[]);
  return <section className="security-admin">{error&&<div className="error-message">{error}</div>}<div className="admin-quick-grid"><div className="panel security-summary"><ShieldCheck/><strong>{data?.blocked?.length??'—'}</strong><span>Tài khoản đang bị khóa</span></div><div className="panel security-summary"><Flag/><strong>{data?.pendingReports?.length??'—'}</strong><span>Báo cáo chờ xử lý</span></div><div className="panel security-summary"><Users/><strong>{data?.recentUsers?.length??'—'}</strong><span>Tài khoản mới trong 7 ngày</span></div></div><button className="btn btn-outline btn-small" onClick={load}>Làm mới cảnh báo</button><h3>Báo cáo tin đăng đang chờ</h3>{data?.pendingReports?.length?<div className="table-wrap"><table><thead><tr><th>Tin đăng</th><th>Người báo cáo</th><th>Lý do</th><th>Ngày gửi</th><th></th></tr></thead><tbody>{data.pendingReports.map(r=><tr key={r.id}><td>{r.propertyTitle}</td><td>{r.reporterName}</td><td>{r.reason}{r.details&&<small className="admin-cell-sub">{r.details}</small>}</td><td>{new Date(r.createdAt).toLocaleString('vi-VN')}</td><td><Link className="btn btn-outline btn-small" to={`/properties/${r.propertyId}`}>Xem tin</Link></td></tr>)}</tbody></table></div>:<p className="muted">Không có báo cáo đang chờ.</p>}<h3>Tài khoản mới trong 7 ngày</h3>{data?.recentUsers?.length?<div className="table-wrap"><table><thead><tr><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Ngày tạo</th></tr></thead><tbody>{data.recentUsers.map(u=><tr key={u.id}><td>{u.name}</td><td>{u.email}</td><td>{u.role}</td><td>{new Date(u.createdAt).toLocaleString('vi-VN')}</td></tr>)}</tbody></table></div>:<p className="muted">Chưa có tài khoản mới.</p>}<h3>Tài khoản bị khóa</h3>{data?.blocked?.length?<div className="table-wrap"><table><thead><tr><th>Họ tên</th><th>Email</th><th>Vai trò</th></tr></thead><tbody>{data.blocked.map(u=><tr key={u.id}><td>{u.name}</td><td>{u.email}</td><td>{u.role}</td></tr>)}</tbody></table></div>:<p className="muted">Không có tài khoản bị khóa.</p>}<p className="demo-note">Trung tâm này tổng hợp các tín hiệu quản trị hiện có (báo cáo, tài khoản mới và tài khoản bị khóa); chưa phải hệ thống phát hiện tự động đăng nhập bất thường.</p></section>;
 }
-function ReportsAdmin(){const [items,setItems]=useState([]);const [error,setError]=useState('');const load=()=>api('/admin/reports').then(d=>setItems(d.items)).catch(e=>setError(e.message));useEffect(()=>{load()},[]);return <div>{error&&<div className="error-message">{error}</div>}{items.length?<div className="table-wrap"><table><thead><tr><th>Tin ID</th><th>Lý do</th><th>Chi tiết</th><th>Trạng thái</th><th></th></tr></thead><tbody>{items.map(r=><tr key={r.id}><td>{r.propertyId}</td><td>{r.reason}</td><td>{r.details}</td><td>{r.status}</td><td><button className="btn btn-outline btn-small" onClick={async()=>{try{await api(`/admin/reports/${r.id}`,{method:'PATCH'});load()}catch(e){alert(e.message)}}}>Đã xử lý</button></td></tr>)}</tbody></table></div>:<div className="empty-state">Chưa có báo cáo vi phạm.</div>}</div>}
+function ReportsAdmin(){
+ const [items,setItems]=useState([]);const [error,setError]=useState('');
+ const load=async()=>{try{const [propertyReports,forumReports]=await Promise.all([api('/admin/reports'),api('/admin/forum-reports')]);setItems([...(propertyReports.items||[]).map(r=>({...r,type:'property'})),...(forumReports.items||[]).map(r=>({...r,type:'forum'}))].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)));setError('')}catch(e){setError(e.message)}};
+ useEffect(()=>{load()},[]);
+ const resolve=async r=>{try{await api(r.type==='forum'?`/admin/forum-reports/${r.id}`:`/admin/reports/${r.id}`,{method:'PATCH'});load()}catch(e){alert(e.message)}};
+ return <div>{error&&<div className="error-message">{error}</div>}{items.length?<div className="table-wrap"><table><thead><tr><th>{'Lo\u1ea1i b\u00e1o c\u00e1o'}</th><th>{'N\u1ed9i dung'}</th><th>{'Ng\u01b0\u1eddi b\u00e1o c\u00e1o'}</th><th>{'L\u00fd do'}</th><th>{'Tr\u1ea1ng th\u00e1i'}</th><th></th></tr></thead><tbody>{items.map(r=><tr key={`${r.type}-${r.id}`}><td>{r.type==='forum'?'Di\u1ec5n \u0111\u00e0n':'B\u1ea5t \u0111\u1ed9ng s\u1ea3n'}</td><td>{r.type==='forum'?<><p>{r.postContent}</p><Link to={`/forum?post=${r.postId}`}>{'M\u1edf di\u1ec5n \u0111\u00e0n'}</Link></>:<Link to={`/properties/${r.propertyId}`}>{r.propertyId}</Link>}</td><td>{r.reporterName||r.reporterId}</td><td>{r.reason}{r.details&&<small className="admin-cell-sub">{r.details}</small>}</td><td>{r.status}</td><td>{r.status==='Pending'&&<button className="btn btn-outline btn-small" onClick={()=>resolve(r)}>{'\u0110\u00e3 x\u1eed l\u00fd'}</button>}</td></tr>)}</tbody></table></div>:<div className="empty-state">{'Ch\u01b0a c\u00f3 b\u00e1o c\u00e1o vi ph\u1ea1m.'}</div>}</div>
+}
 
 function AgentAvatar({ agent, size = 'large' }) {
  const [savedFrame,setSavedFrame]=useState(()=>{try{return localStorage.getItem(`dre-avatar-frame-${agent?.id}`)||'auto'}catch{return 'auto'}});
@@ -606,88 +651,164 @@ function AppointmentsPage({user}){
 
 
 function ForumPage({user}) {
-  const [items,setItems]=useState([]), [loading,setLoading]=useState(true), [content,setContent]=useState(''), [images,setImages]=useState([]), [properties,setProperties]=useState([]), [propertyId,setPropertyId]=useState(''), [busy,setBusy]=useState(false);
+  const [searchParams,setSearchParams]=useSearchParams();
+  const requestedPostId=searchParams.get('post');
+  const [items,setItems]=useState([]), [loading,setLoading]=useState(true), [content,setContent]=useState(''), [images,setImages]=useState([]), [busy,setBusy]=useState(false);
+  const [activePostId,setActivePostId]=useState(requestedPostId);
+  const [linkedPost,setLinkedPost]=useState(null);
+  const openPostDetail=id=>{
+    setActivePostId(id);
+    setSearchParams(current=>{const next=new URLSearchParams(current);next.set('post',id);return next},{replace:true});
+  };
+  const closePostDetail=()=>{
+    setActivePostId(null);setLinkedPost(null);
+    setSearchParams(current=>{const next=new URLSearchParams(current);next.delete('post');return next},{replace:true});
+  };
   const load=useCallback(()=>api('/forum/posts').then(d=>setItems(d.items||[])).catch(e=>alert(e.message)).finally(()=>setLoading(false)),[]);
-  useEffect(()=>{load(); if(user) api('/properties/mine').then(d=>setProperties(d.items||[])).catch(()=>{});},[load,user?.id]);
+  useEffect(()=>{load();},[load]);
+  useEffect(()=>{if(requestedPostId)setActivePostId(requestedPostId)},[requestedPostId]);
+  useEffect(()=>{
+    if(!activePostId||items.some(p=>String(p.id).toLowerCase()===String(activePostId).toLowerCase()))return;
+    let active=true;
+    api(`/forum/posts/${activePostId}`).then(d=>{if(active)setLinkedPost(d.post)}).catch(e=>{if(active)alert(e.message)});
+    return()=>{active=false};
+  },[activePostId,items]);
+  useEffect(()=>{
+    if(!activePostId)return;
+    const oldOverflow=document.body.style.overflow;
+    document.body.style.overflow='hidden';
+    const closeOnEscape=e=>{if(e.key==='Escape')closePostDetail()};
+    window.addEventListener('keydown',closeOnEscape);
+    return()=>{document.body.style.overflow=oldOverflow;window.removeEventListener('keydown',closeOnEscape)};
+  },[activePostId]);
   const uploadImages=async e=>{const files=[...e.target.files].slice(0,8-images.length); e.target.value=''; for(const file of files){if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024){alert('Ảnh phải là JPG, PNG, WEBP và tối đa 5 MB.');continue;} try{const dataUrl=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(new Error('Không đọc được ảnh'));r.readAsDataURL(file)});const d=await api('/uploads',{method:'POST',body:JSON.stringify({fileName:file.name,type:file.type,data:dataUrl,purpose:'forum'})});setImages(x=>[...x,d.url]);}catch(err){alert(err.message)}}};
-  const post=async e=>{e.preventDefault();if(!user)return alert('Vui lòng đăng nhập để đăng bài.');if(!content.trim())return;setBusy(true);try{await api('/forum/posts',{method:'POST',body:JSON.stringify({content,images,propertyId:propertyId||null})});setContent('');setImages([]);setPropertyId('');load()}catch(e){alert(e.message)}finally{setBusy(false)}};
+  const post=async e=>{e.preventDefault();if(!user)return alert('Vui l??ng ????ng nh???p ????? ????ng b??i.');if(!content.trim())return;setBusy(true);try{await api('/forum/posts',{method:'POST',body:JSON.stringify({content,images})});setContent('');setImages([]);load()}catch(e){alert(e.message)}finally{setBusy(false)}};
   const toggleLike=async id=>{if(!user)return alert('Vui lòng đăng nhập để thích bài viết.');const d=await api(`/forum/posts/${id}/like`,{method:'POST'});setItems(x=>x.map(p=>p.id===id?{...p,liked:d.liked,likes:d.likes}:p))};
   const share=async p=>{try{await api(`/forum/posts/${p.id}/share`,{method:'POST'});const url=`${window.location.origin}/forum?post=${p.id}`;if(navigator.share)await navigator.share({title:'DaNangRealEstate',text:p.content.slice(0,120),url});else await navigator.clipboard.writeText(url);setItems(x=>x.map(a=>a.id===p.id?{...a,shares:a.shares+1}:a));alert(navigator.share?'Đã chia sẻ.':'Đã sao chép liên kết bài viết.')}catch(e){if(e.name!=='AbortError')alert(e.message)}};
-  return <main className="container page-main forum-page"><div className="page-title-row"><div><span className="section-kicker">CỘNG ĐỒNG ĐÀ NẴNG</span><h1>Diễn đàn tìm kiếm bất động sản</h1><p>Người mua, người thuê và môi giới có thể đăng nhu cầu, hình ảnh và trao đổi công khai.</p></div>{user&&<Link className="btn btn-primary" to="#forum-composer">Đăng bài tìm BĐS</Link>}</div>
-    {user?<form id="forum-composer" className="panel forum-composer" onSubmit={post}><div className="forum-compose-head">{user.avatarUrl?<img src={user.avatarUrl} alt=""/>:<UserRound/>}<div><strong>{user.name}</strong><span>Đang tìm BĐS ở khu vực nào? Ngân sách bao nhiêu?</span></div></div><textarea value={content} onChange={e=>setContent(e.target.value)} maxLength={5000} rows={5} placeholder="Ví dụ: Mình cần thuê căn hộ 2PN Sơn Trà, ngân sách 10-12 triệu/tháng..."></textarea>{images.length>0&&<div className="forum-image-preview">{images.map((url,i)=><div key={url}><img src={url} alt="Ảnh bài viết"/><button type="button" onClick={()=>setImages(x=>x.filter((_,j)=>j!==i))}>×</button></div>)}</div>}<div className="forum-compose-actions"><label className="btn btn-outline"><ImageIcon size={17}/> Thêm ảnh<input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={uploadImages}/></label><select value={propertyId} onChange={e=>setPropertyId(e.target.value)}><option value="">Gắn tin BĐS của tôi (không bắt buộc)</option>{properties.map(p=><option key={p.id} value={p.id}>{p.title}</option>)}</select><button className="btn btn-primary" disabled={busy||!content.trim()}><SendHorizontal size={17}/>{busy?'Đang đăng...':'Đăng bài'}</button></div><small className="forum-note">Chỉ các tin BĐS do chính tài khoản của bạn đăng mới được phép gắn vào bài viết.</small></form>:<div className="panel forum-login-note"><strong>Muốn đăng bài?</strong><span>Đăng nhập để tìm người bán, người cho thuê và nhà môi giới phù hợp.</span><Link className="btn btn-primary" to="/login">Đăng nhập</Link></div>}
-    <div className="forum-feed">{loading?<div className="empty-state">Đang tải diễn đàn...</div>:items.length?items.map(p=><ForumPostCard key={p.id} post={p} user={user} onLike={()=>toggleLike(p.id)} onShare={()=>share(p)} onReload={load}/>):<div className="empty-state"><MessageSquare size={36}/><h3>Chưa có bài viết</h3><p>Hãy là người đầu tiên đăng nhu cầu tìm bất động sản.</p></div>}</div>
-  </main>;
+  const activePost=items.find(p=>String(p.id).toLowerCase()===String(activePostId).toLowerCase())||(linkedPost&&String(linkedPost.id).toLowerCase()===String(activePostId).toLowerCase()?linkedPost:null);
+  return <>
+  <main className="container page-main forum-page"><div className="page-title-row"><div><span className="section-kicker">CỘNG ĐỒNG ĐÀ NẴNG</span><h1>Diễn đàn tìm kiếm bất động sản</h1><p>Người mua, người thuê và môi giới có thể đăng nhu cầu, hình ảnh và trao đổi công khai.</p></div>{user&&<Link className="btn btn-primary" to="#forum-composer">Đăng bài tìm BĐS</Link>}</div>
+    {user?<form id="forum-composer" className="panel forum-composer" onSubmit={post}><div className="forum-compose-head">{user.avatarUrl?<img src={user.avatarUrl} alt=""/>:<UserRound/>}<div><strong>{user.name}</strong><span>Đang tìm BĐS ở khu vực nào? Ngân sách bao nhiêu?</span></div></div><textarea value={content} onChange={e=>setContent(e.target.value)} maxLength={5000} rows={5} placeholder="Ví dụ: Mình cần thuê căn hộ 2PN Sơn Trà, ngân sách 10-12 triệu/tháng..."></textarea>{images.length>0&&<div className="forum-image-preview">{images.map((url,i)=><div key={url}><img src={url} alt="Ảnh bài viết"/><button type="button" onClick={()=>setImages(x=>x.filter((_,j)=>j!==i))}>×</button></div>)}</div>}<div className="forum-compose-actions"><label className="btn btn-outline"><ImageIcon size={17}/> Thêm ảnh<input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={uploadImages}/></label><button className="btn btn-primary" disabled={busy||!content.trim()}><SendHorizontal size={17}/>{busy?'Đang đăng...':'Đăng bài'}</button></div></form>:<div className="panel forum-login-note"><strong>Muốn đăng bài?</strong><span>Đăng nhập để tìm người bán, người cho thuê và nhà môi giới phù hợp.</span><Link className="btn btn-primary" to="/login">Đăng nhập</Link></div>}
+    <div className="forum-feed">{loading?<div className="empty-state">Đang tải diễn đàn...</div>:items.length?items.map(p=><ForumPostCard key={p.id} post={p} user={user} onLike={()=>toggleLike(p.id)} onShare={()=>share(p)} onReload={load} onOpenDetail={()=>openPostDetail(p.id)}/>):<div className="empty-state"><MessageSquare size={36}/><h3>Chưa có bài viết</h3><p>Hãy là người đầu tiên đăng nhu cầu tìm bất động sản.</p></div>}</div>
+  </main>
+  {activePost&&<div className="forum-post-viewer" role="dialog" aria-modal="true" aria-label="Post and comments">
+    <header className="forum-post-viewer-header"><button type="button" onClick={closePostDetail} aria-label="Back"><ArrowLeft size={22}/></button><strong>{'B\u00e0i vi\u1ebft v\u00e0 b\u00ecnh lu\u1eadn'}</strong></header>
+    <div className="forum-post-viewer-scroll"><ForumPostCard key={`viewer-${activePost.id}`} post={activePost} user={user} initialOpen detailView onLike={()=>toggleLike(activePost.id)} onShare={()=>share(activePost)} onReload={load}/></div>
+  </div>}
+  </>;
 }
-function ForumPostCard({post,user,onLike,onShare,onReload}) {
+function ForumPostCard({post,user,onLike,onShare,onReload,onOpenDetail,initialOpen=false,detailView=false}) {
   const [comments, setComments] = useState([]);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initialOpen);
   const [draft, setDraft] = useState('');
   const [replyTo, setReplyTo] = useState(null);
+  const [postMenuOpen, setPostMenuOpen] = useState(false);
+  const commentsListRef = useRef(null);
+  const [properties, setProperties] = useState([]);
+  const [propertySearch, setPropertySearch] = useState('');
+  const [propertyPickerOpen, setPropertyPickerOpen] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState(null);
 
   const loadComments = () =>
     api(`/forum/posts/${post.id}`)
       .then(d => setComments(d.comments || []))
       .catch(e => alert(e.message));
 
+  useEffect(() => { if (initialOpen) loadComments(); }, [initialOpen, post.id]);
+
+  useEffect(() => {
+    if (open && commentsListRef.current) commentsListRef.current.scrollTop = commentsListRef.current.scrollHeight;
+  }, [comments, open]);
+
   const toggle = () => {
+    if (onOpenDetail && !detailView) { onOpenDetail(); return; }
+    if (detailView) return;
     if (!open) loadComments();
     setOpen(!open);
+  };
+
+  const openPropertyPicker = async () => {
+    if (!properties.length) {
+      try {
+        const d = await api('/properties/mine');
+        setProperties((d.items || []).filter(p => p.status === 'Approved' && (!p.listingUntil || new Date(p.listingUntil).getTime() > Date.now())));
+      } catch (e) { alert(e.message); return; }
+    }
+    setPropertySearch('');
+    setPropertyPickerOpen(true);
   };
 
   const send = async e => {
     e.preventDefault();
     if (!draft.trim()) return;
     try {
-      await api(`/forum/posts/${post.id}/comments`, {
+      const result = await api(`/forum/posts/${post.id}/comments`, {
         method: 'POST',
         body: JSON.stringify({
           content: draft,
           parentId: replyTo || null,
+          propertyId: selectedProperty?.id || null,
         }),
       });
+      setComments(current => [...current, result.comment]);
       setDraft('');
       setReplyTo(null);
-      loadComments();
+      setSelectedProperty(null);
+      setPropertyPickerOpen(false);
       if (onReload) onReload();
     } catch (e) {
       alert(e.message);
     }
   };
 
+  const deleteComment = async comment => {
+    if (!window.confirm('Bạn có muốn xóa bình luận này không?')) return;
+    try {
+      await api(`/forum/posts/${post.id}/comments/${comment.id}`, { method: 'DELETE' });
+      setComments(current => current.filter(item => item.id !== comment.id).map(item => item.parentId === comment.id ? { ...item, parentId: null } : item));
+      if (replyTo === comment.id) setReplyTo(null);
+      if (onReload) onReload();
+    } catch (e) { alert(e.message); }
+  };
+
+  const reportPost = async () => {
+    setPostMenuOpen(false);
+    if (!user) { window.location.href = '/login'; return; }
+    const reason = window.prompt('Vui lòng nhập lý do báo cáo bài viết:');
+    if (!reason?.trim()) return;
+    try {
+      await api(`/forum/posts/${post.id}/report`, { method: 'POST', body: JSON.stringify({ reason }) });
+      alert('Đã gửi báo cáo cho quản trị viên.');
+    } catch (e) { alert(e.message); }
+  };
+
   return (
-    <article className="panel forum-post">
+    <article className={`panel forum-post ${detailView?'forum-post-viewer-post':''}`}>
       <div className="forum-post-head">
-        {post.avatarUrl ? <img src={post.avatarUrl} alt="" /> : <UserRound />}
+        <Link className="forum-author-avatar" to={`/agents/${post.userId}`} title="Xem trang cá nhân">
+          {post.avatarUrl ? <img src={post.avatarUrl} alt="" /> : <UserRound />}
+        </Link>
         <div className="forum-author">
-          <strong>{post.userName}</strong>
+          <Link className="forum-author-name" to={`/agents/${post.userId}`}>{post.userName}</Link>
           {post.verified && <VerifiedBadge size={15} />}
           <small>{new Date(post.createdAt).toLocaleString('vi-VN')}</small>
         </div>
-        <button className="icon-btn" title="Tùy chọn">
-          <MoreHorizontal size={19} />
-        </button>
+        {post.userId !== user?.id && <div className="forum-menu-wrap">
+          <button type="button" className="icon-btn forum-menu-trigger" title="Post options" aria-label="Post options" aria-expanded={postMenuOpen} onClick={()=>setPostMenuOpen(v=>!v)}><MoreHorizontal size={19}/></button>
+          {postMenuOpen && <div className="forum-menu-dropdown"><button type="button" onClick={reportPost}><Flag size={15}/> {'B\u00e1o c\u00e1o b\u00e0i vi\u1ebft'}</button></div>}
+        </div>}
       </div>
 
-      <p className="forum-content">{post.content}</p>
+      <p className={`forum-content ${onOpenDetail&&!detailView?'is-openable':''}`} onClick={()=>{if(!detailView)onOpenDetail?.()}}>{post.content}</p>
 
       {post.images?.length > 0 && (
         <div className={`forum-post-images count-${Math.min(post.images.length, 4)}`}>
           {post.images.map(url => (
-            <img key={url} src={url} alt="Ảnh bài viết" />
+            <img key={url} src={url} alt="Ảnh bài viết" onClick={()=>{if(!detailView)onOpenDetail?.()}} />
           ))}
         </div>
       )}
 
-      {post.property && (
-        <Link className="forum-property-card" to={`/properties/${post.property.id}`}>
-          <img src={post.property.coverImage || FALLBACK} alt="" />
-          <div>
-            <strong>{post.property.title}</strong>
-            <span>{money(post.property.price, post.property.transaction)}</span>
-          </div>
-          <ArrowRight size={16} />
-        </Link>
-      )}
 
       <div className="forum-stats">
         <span>{post.likes} lượt thích</span>
@@ -709,31 +830,42 @@ function ForumPostCard({post,user,onLike,onShare,onReload}) {
 
       {open && (
         <div className="forum-comments">
-          {comments.map(c => (
-            <div className={`forum-comment ${c.parentId ? 'reply' : ''}`} key={c.id}>
-              {c.avatarUrl ? <img src={c.avatarUrl} alt="" /> : <UserRound />}
-              <div>
-                <div>
-                  <strong>{c.userName}</strong>
-                  {c.verified && <VerifiedBadge size={13} />}
-                </div>
-                <p>{c.content}</p>
-                <small>{new Date(c.createdAt).toLocaleString('vi-VN')}</small>
-                <button type="button" onClick={() => setReplyTo(c.id)}>
-                  Trả lời
-                </button>
+          <div className="forum-comments-list" ref={commentsListRef}>
+          {comments.filter(c=>!c.parentId || !comments.some(parent=>parent.id===c.parentId)).map(c=>(
+            <ForumCommentItem key={c.id} comment={c} comments={comments} user={user} onReply={setReplyTo} onDelete={deleteComment}/>
+          ))}
+          </div>
+
+          {propertyPickerOpen && (
+            <div className="forum-property-picker">
+              <div className="forum-property-picker-head"><strong>Chọn tin bất động sản</strong><button type="button" onClick={()=>setPropertyPickerOpen(false)} aria-label="Đóng">×</button></div>
+              <input value={propertySearch} onChange={e=>setPropertySearch(e.target.value)} placeholder="Tìm theo tên tin, khu vực..." autoFocus />
+              <div className="forum-property-options">
+                {properties.filter(p=>`${p.title} ${p.district||''} ${p.address||''}`.toLowerCase().includes(propertySearch.toLowerCase())).map(p=>(
+                  <button type="button" key={p.id} className="forum-property-option" onClick={()=>{setSelectedProperty(p);setPropertyPickerOpen(false)}}>
+                    <img src={p.coverImage||p.images?.[0]||FALLBACK} alt="" />
+                    <span><strong>{p.title}</strong><small>{p.district||p.address||'Đà Nẵng'} · {money(p.price,p.transaction)}</small></span>
+                  </button>
+                ))}
+                {!properties.length && <p className="forum-property-empty">Bạn chưa có tin đang được hiển thị công khai.</p>}
+                {!!properties.length && !properties.some(p=>`${p.title} ${p.district||''} ${p.address||''}`.toLowerCase().includes(propertySearch.toLowerCase())) && <p className="forum-property-empty">Không tìm thấy tin phù hợp.</p>}
               </div>
             </div>
-          ))}
+          )}
+          {selectedProperty && <div className="forum-selected-property"><span>Đính kèm: {selectedProperty.title}</span><button type="button" onClick={()=>setSelectedProperty(null)} aria-label="Remove listing">×</button></div>}
 
           {user && (
             <form className="forum-comment-form" onSubmit={send}>
+              {replyTo && <div className="forum-replying-to"><span>Đang trả lời {comments.find(c=>c.id===replyTo)?.userName || 'bình luận'}</span><button type="button" onClick={()=>setReplyTo(null)} aria-label="Hủy trả lời"><X size={15}/></button></div>}
               <input
                 value={draft}
                 onChange={e => setDraft(e.target.value)}
                 placeholder={replyTo ? 'Trả lời bình luận...' : 'Viết bình luận...'}
                 maxLength={2000}
               />
+              <button type="button" className="forum-attach-property" onClick={openPropertyPicker} title="Attach your listing">
+                <Building2 size={17} /><span>Gắn tin</span>
+              </button>
               <button className="btn btn-primary btn-small">Gửi</button>
             </form>
           )}
@@ -743,6 +875,31 @@ function ForumPostCard({post,user,onLike,onShare,onReload}) {
       )}
     </article>
   );
+}
+
+function ForumCommentItem({comment,comments,user,onReply,onDelete,depth=0}) {
+  const [menuOpen,setMenuOpen]=useState(false);
+  const replies=comments.filter(c=>c.parentId===comment.id);
+  return <div className="forum-comment-thread">
+    <div className={`forum-comment ${depth?'reply':''}`}>
+      {comment.avatarUrl?<img src={comment.avatarUrl} alt=""/>:<UserRound/>}
+      <div className="forum-comment-bubble">
+        <div className="forum-comment-author"><strong>{comment.userName}</strong>{comment.verified&&<VerifiedBadge size={13}/>}</div>
+        <p>{comment.content}</p>
+        {comment.property&&<Link className="forum-property-card forum-comment-property" to={`/properties/${comment.property.id}`}>
+          <img src={comment.property.coverImage||FALLBACK} alt=""/>
+          <div><strong>{comment.property.title}</strong><span>{money(comment.property.price,comment.property.transaction)}</span></div>
+          <ArrowRight size={16}/>
+        </Link>}
+        {(user?.id===comment.userId||user?.role==='Admin')&&<div className="forum-menu-wrap forum-comment-menu-wrap">
+          <button type="button" className="forum-comment-menu-trigger" title="Comment options" aria-label="Comment options" aria-expanded={menuOpen} onClick={()=>setMenuOpen(value=>!value)}><MoreHorizontal size={16}/></button>
+          {menuOpen&&<div className="forum-menu-dropdown forum-comment-menu"><button type="button" onClick={()=>onDelete(comment)}><Trash2 size={14}/> {'X\u00f3a'}</button></div>}
+        </div>}
+        <div className="forum-comment-meta"><small>{new Date(comment.createdAt).toLocaleString('vi-VN')}</small><button type="button" onClick={()=>onReply(comment.id)}>{'Tr\u1ea3 l\u1eddi'}</button></div>
+      </div>
+    </div>
+    {!!replies.length&&<div className="forum-comment-replies">{replies.map(reply=><ForumCommentItem key={reply.id} comment={reply} comments={comments} user={user} onReply={onReply} onDelete={onDelete} depth={depth+1}/>)}</div>}
+  </div>;
 }
 
 function InfoPage({type}){const data={faq:{title:'FAQ',kicker:'GIẢI ĐÁP',items:[['Tôi có thể đăng tin như thế nào?','Đăng nhập, chọn Đăng tin, nhập đầy đủ thông tin và gửi duyệt.'],['Làm sao để tìm BĐS?','Dùng thanh tìm kiếm hoặc bộ lọc theo nhu cầu, khu vực, giá và loại BĐS.'],['Có thể gắn tin vào bài diễn đàn không?','Có. Bạn chỉ được gắn những tin BĐS do chính tài khoản của bạn đăng.'],['Làm sao báo cáo tin xấu?','Mở tin BĐS và chọn Báo cáo tin để gửi lý do cho quản trị viên.']]},terms:{title:'Điều khoản sử dụng',kicker:'QUY ĐỊNH',items:[['Sử dụng dịch vụ','Người dùng chịu trách nhiệm về tính chính xác của thông tin mình đăng.'],['Nội dung cấm','Không đăng thông tin giả, lừa đảo, vi phạm pháp luật hoặc xâm phạm quyền của người khác.'],['Tin BĐS','DaNangRealEstate là nền tảng kết nối; người dùng cần tự kiểm tra pháp lý và thông tin trước giao dịch.'],['Diễn đàn','Không spam, xúc phạm, mạo danh hoặc đăng nội dung trái pháp luật. Nội dung vi phạm có thể bị gỡ.']]},privacy:{title:'Chính sách',kicker:'CHÍNH SÁCH',items:[['Thông tin tài khoản','Hệ thống lưu các thông tin cần thiết để tạo tài khoản và vận hành dịch vụ.'],['Ảnh và nội dung','Ảnh, bài viết và tin BĐS do người dùng đăng có thể được hiển thị công khai theo chức năng của website.'],['Bảo mật','Không chia sẻ mật khẩu, OTP hoặc thông tin thanh toán nhạy cảm qua diễn đàn và tin nhắn.'],['Quản lý dữ liệu','Người dùng có thể yêu cầu hỗ trợ khi cần chỉnh sửa hoặc xử lý thông tin tài khoản.']]}}[type];return <main className="container page-main info-page"><div className="page-title-row"><div><span className="section-kicker">{data.kicker}</span><h1>{data.title}</h1></div></div><section className="panel info-content">{data.items.map(([q,a])=><article key={q}><h3>{q}</h3><p>{a}</p></article>)}</section></main>}
