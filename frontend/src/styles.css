@@ -567,3 +567,27 @@ html[data-theme="dark"] .forum-comment>div{background:#1c2d3d}
   .token-links .btn,.form-actions .btn{flex:1}.form-actions{flex-wrap:wrap}.auth-card{padding:22px 17px}
   .modal{padding:22px 17px}.admin-workspace{padding:10px}.admin-workspace-top h2{font-size:18px}
 }
+
+/* Keep the two-level navigation usable on narrow phone viewports. */
+@media(max-width:760px){
+  .header-inner{width:100%;padding-left:14px;padding-right:14px}
+  .header-top{min-height:0;padding:9px 0 8px;flex-wrap:wrap;gap:8px}
+  .header-top>.brand{flex:1 1 100%;justify-content:center}
+  .header-account{width:100%;justify-content:space-between;gap:6px;min-width:0}
+  .header-account>*{flex:0 0 auto}
+  .account-token,.header-contact-link,.header-post-link{min-width:36px;min-height:36px;padding:8px;justify-content:center}
+  .account-token span,.header-contact-link>span:not(.contact-unread-badge),.header-post-link span,.theme-toggle span{display:none}
+  .account-me-menu{display:none}
+  .notification-link,.theme-toggle,.mobile-toggle{width:36px;height:36px;display:grid;place-items:center;padding:0}
+  .header-post-link{display:inline-flex}
+  .nav-links{width:100%;max-width:100%;overflow-x:hidden}
+  .hero,.section,.benefit-band,.cta,.footer{width:100%;max-width:100%}
+  .hero-inner,.section>.container,.benefit-band>.container,.cta.container,.footer>.container{min-width:0}
+  .property-grid,.listing-layout,.detail-layout,.agents-layout,.profile-layout,.admin-shell{min-width:0}
+}
+@media(max-width:380px){
+  .header-inner{padding-left:10px;padding-right:10px}
+  .header-top>.brand{font-size:12px}
+  .account-token,.header-contact-link,.header-post-link,.notification-link,.theme-toggle,.mobile-toggle{min-width:32px;width:32px;height:32px;padding:5px}
+  .header-account{gap:4px}
+}
